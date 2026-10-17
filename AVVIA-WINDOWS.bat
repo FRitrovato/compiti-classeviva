@@ -1,6 +1,6 @@
 @echo off
 REM =====================================================================
-REM compiti.bat  (Windows)
+REM AVVIA-WINDOWS.bat  (Windows)
 REM
 REM Il bottone unico: doppio clic e parte. La PRIMA volta prepara Python
 REM e le librerie, le volte dopo parte subito.

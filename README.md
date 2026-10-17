@@ -38,7 +38,7 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 
 1. Installa Python 3 da [python.org](https://www.python.org/downloads/). Durante l'installazione spunta **"Add python.exe to PATH"**.
 2. Scarica questo progetto (bottone verde **Code** > **Download ZIP**) ed estrailo in una cartella.
-3. Doppio clic su **`compiti.bat`**.
+3. Doppio clic su **`AVVIA-WINDOWS`**.
 
 La prima volta ci mette un minuto a prepararsi. Poi chiede le credenziali e apre il foglio nel browser.
 
@@ -74,7 +74,7 @@ compiti.sh --classe 2A             il nome della classe in testa al foglio
 compiti.sh --sabato                se la scuola fa lezione anche il sabato
 ```
 
-Su Windows le opzioni si usano dal Prompt dei comandi: `compiti.bat --domani`.
+Su Windows le opzioni si usano dal Prompt dei comandi: `AVVIA-WINDOWS.bat --domani`.
 
 ## L'orario
 

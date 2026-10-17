@@ -1,0 +1,31 @@
+# Collaudo automatico: a ogni modifica, GitHub prova il programma su un Windows e su un Mac veri,
+# partendo dai file di avvio che usano i genitori. Usa un ClasseViva FINTO: nessuna credenziale.
+name: Collaudo
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Primo avvio con AVVIA-WINDOWS.bat (prepara Python e librerie)
+        shell: cmd
+        run: echo.| call AVVIA-WINDOWS.bat --help
+      - name: Collaudo con un ClasseViva finto
+        shell: cmd
+        run: .venv\Scripts\python.exe tests\collaudo.py
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Primo avvio con compiti.sh (prepara Python e librerie)
+        run: bash compiti.sh --help
+      - name: Collaudo con un ClasseViva finto
+        run: .venv/bin/python tests/collaudo.py

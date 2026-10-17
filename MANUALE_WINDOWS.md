@@ -44,7 +44,7 @@ Fatto. Python non lo vedrai mai più: lavora dietro le quinte.
 
 ## PARTE 3. Usarlo
 
-1. Nella cartella del programma, fai **doppio clic** sul file **compiti** (quello con l'icona a forma di ingranaggio, il nome completo è `compiti.bat`).
+1. Nella cartella del programma, fai **doppio clic** sul file **AVVIA-WINDOWS**.
 
 2. **Se compare una finestra blu "Windows ha protetto il PC":** è normale, succede con tutti i programmi che Windows non conosce.
     Clicca **Ulteriori informazioni**, poi **Esegui comunque**.
@@ -72,9 +72,9 @@ Fatto. Python non lo vedrai mai più: lavora dietro le quinte.
 
 ## Le volte successive
 
-Solo la **PARTE 3**: doppio clic su **compiti**, codice, password, ecco il foglio. Niente installazioni.
+Solo la **PARTE 3**: doppio clic su **AVVIA-WINDOWS**, codice, password, ecco il foglio. Niente installazioni.
 
-**Trucco per averlo sempre a portata di mano:** clic con il tasto destro su **compiti** > **Mostra altre opzioni** > **Invia a** > **Desktop (crea collegamento)**. Da quel momento lo trovi sul Desktop.
+**Trucco per averlo sempre a portata di mano:** clic con il tasto destro su **AVVIA-WINDOWS** > **Mostra altre opzioni** > **Invia a** > **Desktop (crea collegamento)**. Da quel momento lo trovi sul Desktop.
 
 ---
 
@@ -94,7 +94,7 @@ Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel no
 |---|---|
 | **"Manca Python 3"** | Ripeti la PARTE 1. Probabilmente mancava la spunta su **"Add python.exe to PATH"**: reinstalla e mettila. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
-| **La finestra nera si chiude subito** | Fai clic con il tasto destro su **compiti** e scegli **Apri**. Se ancora non va, riavvia il computer e riprova. |
+| **La finestra nera si chiude subito** | Fai clic con il tasto destro su **AVVIA-WINDOWS** e scegli **Apri**. Se ancora non va, riavvia il computer e riprova. |
 | **L'orario è sbagliato** | Il programma lo ricostruisce dal registro e a volte sbaglia. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
 | **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**. |
 

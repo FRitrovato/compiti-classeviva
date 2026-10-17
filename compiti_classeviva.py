@@ -585,7 +585,7 @@ def main():
     base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno), encoding="utf-8")
     print(f"[ok] testo per WhatsApp -> {base.with_suffix('.txt')}")
     if origine and not csv.exists():
-        print("[i] l'orario e' ricostruito dal registro: se non torna, compila orario.csv (vedi LEGGIMI)")
+        print("[i] l'orario e' ricostruito dal registro: se non torna, compila orario.csv (vedi il manuale)")
     if a.debug:
         print("[!] ATTENZIONE: i file debug_*.json contengono dati personali. Cancellali, non condividerli.")
 
