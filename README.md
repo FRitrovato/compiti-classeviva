@@ -78,7 +78,10 @@ Su Windows le opzioni si usano dal Prompt dei comandi: `AVVIA-WINDOWS.bat --doma
 
 ## L'orario
 
-Il programma prova a **ricostruirlo** dalle lezioni firmate dai docenti nelle ultime settimane. Funziona abbastanza bene, ma supplenze, compresenze e cambi d'orario lo possono sporcare: dove non è sicuro, lo dice con un punto interrogativo.
+Il programma prova a **ricostruirlo** dalle lezioni firmate dai docenti nelle ultime settimane. Dove non è sicuro, lo dice con un punto interrogativo.
+
+> ⚠️ **L'orario ricostruito PUÒ CONTENERE ERRORI.** Fa fede l'orario ufficiale comunicato dalla scuola.
+> Sbaglia soprattutto quando lo stesso docente insegna più materie (per esempio Matematica e Scienze, o Italiano, Storia e Geografia), quando ci sono supplenze o compresenze, e a inizio anno, quando l'orario è ancora provvisorio. Per questo, ogni volta che l'orario è ricostruito, la pagina, il PDF e il testo per WhatsApp lo dicono chiaramente.
 
 Se volete l'orario giusto al 100%, scrivetelo una volta sola:
 

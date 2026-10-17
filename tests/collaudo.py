@@ -56,7 +56,8 @@ testo = testi[0].read_text(encoding="utf-8")
 for atteso in ("Classe 2A", "Geometria: aree pag. 99", "Portare il goniometro",
                "città e perché", "Orario settimanale", "diario scritto a mano"):
     assert atteso in html, f"nella pagina manca: {atteso}"
-for atteso in ("*Matematica*", "*Inglese*", "diario scritto a mano"):
+assert "CONTENERE ERRORI" in html, "manca l'avviso sull'orario nella pagina"
+for atteso in ("*Matematica*", "*Inglese*", "diario scritto a mano", "CONTENERE ERRORI"):
     assert atteso in testo, f"nel testo WhatsApp manca: {atteso}"
 assert pdf[0].read_bytes()[:4] == b"%PDF"
 assert "G1234567X" not in html + testo and "password-finta" not in html + testo, "credenziali nei fogli!"

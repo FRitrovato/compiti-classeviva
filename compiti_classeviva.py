@@ -352,7 +352,12 @@ def genera_pdf(percorso, giorni, orario, origine, per_giorno, studente):
     return True
 
 
-def testo_whatsapp(giorni, orario, per_giorno):
+# L'avvertenza sull'orario ricostruito: stessa frase ovunque (pagina, PDF, WhatsApp).
+AVVISO_ORARIO = ("Orario ricostruito in automatico dalle lezioni firmate sul registro: "
+                 "PUÒ CONTENERE ERRORI. Fa fede l'orario ufficiale comunicato dalla scuola.")
+
+
+def testo_whatsapp(giorni, orario, per_giorno, ricostruito=False):
     """Testo pronto da incollare su WhatsApp: niente nomi, solo materie e compiti."""
     # Va nel gruppo dei genitori, quindi PRIVACY prima di tutto:
     # niente scuola, niente classe, niente studente, niente docenti.
@@ -374,6 +379,8 @@ def testo_whatsapp(giorni, orario, per_giorno):
         else:
             righe.append("▪️ Nessun compito registrato")
     # La data di aggiornamento SEMPRE in fondo: chi legge capisce subito se e' roba vecchia.
+    if ricostruito and orario:
+        righe += ["", f"_\u26a0\ufe0f {AVVISO_ORARIO}_"]
     righe += ["", f"_Aggiornato il {datetime.now():%d/%m alle %H:%M} dal registro elettronico._",
               "_Per i compiti fa sempre fede il diario scritto a mano dall'alunno._"]
     return "\n".join(righe)
@@ -410,7 +417,7 @@ def sigla(materia):
     return corto.replace(" / ", "/")
 
 
-def html_pagina_web(classe, orario, giorni, per_giorno):
+def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False):
     """Il corpo della pagina: compiti in arrivo + orario della settimana."""
     # Pensata per essere condivisa (gruppo classe, stampa), quindi PRIVACY prima di tutto:
     # al massimo il nome della classe. Niente scuola, niente studenti, niente docenti.
@@ -444,6 +451,8 @@ def html_pagina_web(classe, orario, giorni, per_giorno):
             out += [f"<td>{e(sigla(orario[d].get(o, '')))}</td>" for d in giorni_sett]
             out.append("</tr>")
         out.append("</tbody></table>")
+        if ricostruito:
+            out.append(f"<p><strong>\u26a0\ufe0f {e(AVVISO_ORARIO)}</strong></p>")
 
     out.append("<p><em>Dati presi dal registro elettronico. Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p>")
     return "\n".join(out)
@@ -482,7 +491,7 @@ p{margin:.4rem 0}em{color:#666;font-size:.85rem}
 """
 
 
-def pagina_completa(classe, orario, giorni, per_giorno):
+def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False):
     """La pagina HTML finale: titolo, bottone Stampa, compiti in arrivo, orario della settimana."""
     titolo_pagina = f"Classe {classe}" if classe else "Compiti e orario"
     return (f"<!doctype html><html lang='it'><head><meta charset='utf-8'>"
@@ -490,7 +499,7 @@ def pagina_completa(classe, orario, giorni, per_giorno):
             f"<title>{html.escape(titolo_pagina)}</title><style>{STILE_PAGINA}</style></head><body>"
             f"<h1>{html.escape(titolo_pagina)}</h1>"
             f"<button class='stampa' onclick='window.print()'>Stampa / salva PDF</button>"
-            + html_pagina_web(classe, orario, giorni, per_giorno) + "</body></html>")
+            + html_pagina_web(classe, orario, giorni, per_giorno, ricostruito) + "</body></html>")
 
 
 # ================================================================ MAIN
@@ -564,7 +573,7 @@ def main():
     else:
         try:
             orario = orario_da_lezioni(cv.lezioni(oggi - timedelta(weeks=3), oggi))
-            origine = "ricostruito dalle lezioni firmate (indicativo: verificalo!)"
+            origine = "RICOSTRUITO in automatico: può contenere errori, fa fede l'orario ufficiale della scuola"
         except requests.HTTPError:
             orario, origine = {}, ""
 
@@ -575,14 +584,15 @@ def main():
             else f"compiti_{giorni[0]:%Y-%m-%d}_{giorni[-1]:%Y-%m-%d}")
     base = uscita / nome
     pagina = base.with_suffix(".html")
-    pagina.write_text(pagina_completa(a.classe, orario, giorni, per_giorno), encoding="utf-8")
+    ricostruito = not csv.exists()
+    pagina.write_text(pagina_completa(a.classe, orario, giorni, per_giorno, ricostruito), encoding="utf-8")
     print(f"[ok] pagina  -> {pagina}")
     if genera_pdf(base.with_suffix(".pdf"), giorni, orario, origine, per_giorno,
                   f"Classe {a.classe}" if a.classe else ""):
         print(f"[ok] PDF     -> {base.with_suffix('.pdf')}")
     else:
         print("[i] per avere anche il PDF:  pip install reportlab  (intanto stampa la pagina)")
-    base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno), encoding="utf-8")
+    base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno, ricostruito), encoding="utf-8")
     print(f"[ok] testo per WhatsApp -> {base.with_suffix('.txt')}")
     if origine and not csv.exists():
         print("[i] l'orario e' ricostruito dal registro: se non torna, compila orario.csv (vedi il manuale)")

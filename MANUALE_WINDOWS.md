@@ -95,13 +95,14 @@ Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel no
 | **"Manca Python 3"** | Ripeti la PARTE 1. Probabilmente mancava la spunta su **"Add python.exe to PATH"**: reinstalla e mettila. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **La finestra nera si chiude subito** | Fai clic con il tasto destro su **AVVIA-WINDOWS** e scegli **Apri**. Se ancora non va, riavvia il computer e riprova. |
-| **L'orario è sbagliato** | Il programma lo ricostruisce dal registro e a volte sbaglia. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
+| **L'orario è sbagliato** | Può succedere: il programma lo ricostruisce dal registro e a volte sbaglia, soprattutto quando un docente insegna più materie. Fa fede l'orario ufficiale della scuola. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
 | **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**. |
 
 ---
 
 ## Da sapere
 
+- L'**orario** è ricostruito in automatico dal registro e **può contenere errori**: fa fede l'orario ufficiale della scuola.
 - Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**: il programma è solo un aiuto in più.
 - Il programma **legge** soltanto: non modifica niente sul registro.
 - Parla solo con il server di ClasseViva, non manda i tuoi dati a nessun altro.
