@@ -345,6 +345,8 @@ def genera_pdf(percorso, giorni, orario, origine, per_giorno, studente):
         el.append(KeepTogether(blocco))
     if origine:
         el.append(Paragraph(f"<font size=8>Orario {e(origine)}.</font>", st["Normal"]))
+    el.append(Paragraph("<font size=8><i>Per i compiti fa sempre fede il diario scritto a mano "
+                        "dall'alunno.</i></font>", st["Normal"]))
     SimpleDocTemplate(str(percorso), pagesize=A4, leftMargin=40, rightMargin=40,
                       topMargin=40, bottomMargin=40).build(el)
     return True
@@ -372,7 +374,8 @@ def testo_whatsapp(giorni, orario, per_giorno):
         else:
             righe.append("▪️ Nessun compito registrato")
     # La data di aggiornamento SEMPRE in fondo: chi legge capisce subito se e' roba vecchia.
-    righe += ["", f"_Aggiornato il {datetime.now():%d/%m alle %H:%M} dal registro elettronico_"]
+    righe += ["", f"_Aggiornato il {datetime.now():%d/%m alle %H:%M} dal registro elettronico._",
+              "_Per i compiti fa sempre fede il diario scritto a mano dall'alunno._"]
     return "\n".join(righe)
 
 
@@ -442,7 +445,7 @@ def html_pagina_web(classe, orario, giorni, per_giorno):
             out.append("</tr>")
         out.append("</tbody></table>")
 
-    out.append("<p><em>Dati presi dal registro elettronico. In caso di dubbio fa fede il registro.</em></p>")
+    out.append("<p><em>Dati presi dal registro elettronico. Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p>")
     return "\n".join(out)
 
 def leggi_data(testo):

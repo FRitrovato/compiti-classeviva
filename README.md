@@ -30,7 +30,7 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 - **NON è un prodotto Spaggiari**, né della scuola. Nessuno dei due lo ha approvato o lo supporta.
 - Usa la stessa interfaccia **non ufficiale** usata dall'app ClasseViva, documentata da progetti open source ([open-viva/endpoints](https://github.com/open-viva/endpoints), [Classeviva.py](https://github.com/Lioydiano/Classeviva)). Se Spaggiari cambia qualcosa, il programma può smettere di funzionare da un giorno all'altro.
 - Fa SOLO letture: non scrive, non giustifica, non modifica niente sul registro.
-- In caso di dubbio, fa fede il registro elettronico.
+- Per i compiti, **fa fede il diario scritto a mano dall'alunno**: il programma è solo un aiuto in più.
 
 ## Installazione e uso
 

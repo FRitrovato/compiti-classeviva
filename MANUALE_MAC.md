@@ -120,12 +120,13 @@ Nella cartella **compiti-classeviva-main** sulla Scrivania trovi tre file nuovi 
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **Errore con la parola "certificate"** | Apri **Applicazioni** > cartella **Python 3...** > doppio clic su **Install Certificates.command**. Poi riprova. |
 | **L'orario è sbagliato** | Il programma lo ricostruisce dal registro e a volte sbaglia. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
-| **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. In caso di dubbio, fa fede il registro. |
+| **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**. |
 
 ---
 
 ## Da sapere
 
+- Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**: il programma è solo un aiuto in più.
 - Il programma **legge** soltanto: non modifica niente sul registro.
 - Parla solo con il server di ClasseViva, non manda i tuoi dati a nessun altro.
 - **Non è un prodotto Spaggiari né della scuola**: l'ha fatto un genitore, gratis. Se un giorno smette di funzionare, è perché Spaggiari ha cambiato qualcosa.
