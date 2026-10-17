@@ -34,6 +34,7 @@ import argparse
 import getpass
 import html
 import json
+import re
 import sys
 import webbrowser
 from collections import Counter, defaultdict
@@ -62,6 +63,14 @@ GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato",
 # La cartella dello script. Qui cerchiamo orario.csv (facoltativo).
 QUI = Path(__file__).resolve().parent
 
+
+
+def sigla_classe(descrizione):
+    """Dal registro "2A QUALCOSA" prende solo la sigla "2A". Se non la riconosce, niente."""
+    # ATTENZIONE: "classe_ident" sembra la sigla ma NON lo e': e' un codice numerico interno.
+    # La sigla vera e' la prima parola di "classe_desc". Verificato su un account reale.
+    prima = str(descrizione or "").strip().split(" ")[0]
+    return prima.upper() if re.fullmatch(r"[1-5][A-Za-z]{1,3}", prima) else ""
 
 
 # ================================================================ ACCESSO
@@ -119,8 +128,7 @@ class ClasseViva:
         self._dump("whoami", info)
         if not self.id:
             self.id = str(info["id"])
-        # "classe_ident" e' la sigla della classe, tipo "3B". Nient'altro: niente nomi, niente scuola.
-        self.classe = str(info.get("classe_ident") or "").strip()
+        self.classe = sigla_classe(info.get("classe_desc"))
 
     def _accedi_v1(self):
         # Il login storico: un JSON con utente e password, in cambio un TOKEN.

@@ -64,4 +64,8 @@ for atteso in ("*Matematica*", "*Inglese*", "diario scritto a mano", "CONTENERE 
 assert pdf[0].read_bytes()[:4] == b"%PDF"
 assert "G1234567X" not in html + testo and "password-finta" not in html + testo, "credenziali nei fogli!"
 
+# La sigla della classe: dal testo del registro, mai dal codice numerico interno.
+assert m.sigla_classe("2A MEDIA") == "2A" and m.sigla_classe("3b liceo") == "3B"
+assert m.sigla_classe("1234567") == "" and m.sigla_classe(None) == "" and m.sigla_classe("") == ""
+
 print("COLLAUDO OK: pagina, PDF e testo WhatsApp prodotti correttamente, nessuna credenziale nei fogli.")
