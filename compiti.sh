@@ -8,7 +8,7 @@
 # Uso:
 #   ./compiti.sh                    tutti i compiti in arrivo + orario
 #   ./compiti.sh --domani           solo il prossimo giorno di scuola
-#   ./compiti.sh --classe 2A        con il nome della classe in testa
+#   ./compiti.sh --sabato           se la scuola fa lezione anche il sabato
 # =====================================================================
 set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -546,8 +546,6 @@ def main():
     ap.add_argument("--data", help="un solo giorno, AAAA-MM-GG")
     ap.add_argument("--dal", help="inizio periodo, AAAA-MM-GG")
     ap.add_argument("--al", help="fine periodo, AAAA-MM-GG (default: uguale a --dal)")
-    ap.add_argument("--classe", default="",
-                    help="nome della classe in testa al foglio (di solito non serve: lo legge dal registro)")
     ap.add_argument("--sabato", action="store_true", help="la scuola fa lezione anche il sabato")
     ap.add_argument("--uscita", default=".", help="cartella dove salvare i file (default: quella corrente)")
     ap.add_argument("--no-open", action="store_true", help="non aprire il foglio nel browser alla fine")
@@ -595,8 +593,8 @@ def main():
     finally:
         password = None  # non la teniamo in giro piu' del necessario
     print("[ok] accesso eseguito")
-    # La classe: quella scritta a mano con --classe, altrimenti quella del registro.
-    classe = a.classe.strip() or cv.classe
+    # La classe la dice il registro stesso: nessuno deve scriverla.
+    classe = cv.classe
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
     didattica = cv.compiti_didattica()
