@@ -193,36 +193,59 @@ def orario_da_csv(percorso):
     return orario
 
 
-def orario_da_lezioni(lezioni):
-    """Per ogni giorno della settimana e ora, la materia firmata piu' spesso."""
+def _data(testo):
+    try:
+        return datetime.strptime((testo or "")[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _materia_valida(nome):
+    nome = (nome or "").strip().title()
+    # Sostegno e supplenze NON dicono niente sull'orario della classe. Fuori.
+    if not nome or any(x in nome.lower() for x in ("sostegno", "supplenza")):
+        return ""
+    return nome
+
+
+def orario_da_lezioni(lezioni, oggi=None):
+    """Ricostruisce l'orario dalle lezioni firmate sul registro."""
     # Il PIANO B, quando orario.csv non c'e'.
-    # Contiamo, per ogni casella (giorno, ora), quante volte compare ogni materia.
-    # Avvertenza onesta: a inizio anno e' un mezzo sorteggio. L'abbiamo visto.
-    conta = defaultdict(Counter)
+    # Per ogni casella (giorno, ora) contiamo le materie firmate dai docenti.
+    # Le ultime due settimane valgono DOPPIO: l'orario di settembre spesso e' provvisorio.
+    # Sulla 2A, ottobre 2026, confrontato con l'orario ufficiale: da 11 a 18 caselle giuste su 30.
+    #
+    # E i compiti? Le date di consegna dicono in quali GIORNI c'e' una materia, e li abbiamo
+    # provati: anche solo come spareggio, sulla 2A peggioravano il risultato. Gli errori veri
+    # sono tra materie dello stesso docente negli stessi giorni (es. Matematica e Scienze),
+    # e li' sapere il giorno non serve. Misurato, non supposto: per questo NON li usiamo.
+    #
+    # Avvertenza onesta: resta una ricostruzione. Dove i dati non bastano, lo dice con "(?)".
+    oggi = oggi or date.today()
+    punti = defaultdict(Counter)
     for l in lezioni:
+        d = _data(l.get("evtDate"))
+        materia = _materia_valida(l.get("subjectDesc"))
         try:
-            g = datetime.strptime(l["evtDate"], "%Y-%m-%d").weekday()
             durata = int(l.get("evtDuration") or 1)
             ora = int(l["evtHPos"])
         except (KeyError, ValueError, TypeError):
-            # Lezione con dati monchi? La ignoriamo e via.
+            continue  # lezione con dati monchi: la ignoriamo
+        if not d or not materia:
             continue
-        materia = (l.get("subjectDesc") or "").strip().title()
-        # Sostegno e supplenze NON dicono niente sull'orario della classe. Fuori.
-        if not materia or any(x in materia.lower() for x in ("sostegno", "supplenza")):
-            continue
-        # Una lezione di 2 ore occupa 2 caselle.
-        for h in range(ora, ora + durata):
-            conta[(g, h)][materia] += 1
+        peso = 2 if (oggi - d).days <= 14 else 1
+        for h in range(ora, ora + durata):  # una lezione di 2 ore occupa 2 caselle
+            punti[(d.weekday(), h)][materia] += peso
+
     orario = defaultdict(dict)
-    for (g, h), c in conta.items():
-        top = c.most_common(2)
-        # Ci fidiamo solo se c'e' un vincitore chiaro: almeno 2 volte e davanti a tutti.
-        if len(top) == 1 or top[0][1] >= 2 and top[0][1] > top[1][1]:
+    for (g, h), voti in punti.items():
+        top = voti.most_common(2)
+        # Ci fidiamo solo se c'e' un vincitore chiaro.
+        if len(top) == 1 and top[0][1] >= 1 or top[0][1] >= 2 and top[0][1] >= 1.5 * top[1][1]:
             orario[g][h] = top[0][0]
         else:  # dati discordanti: mostro i due candidati
             # Meglio un punto interrogativo onesto che una materia sbagliata nello zaino.
-            orario[g][h] = f"{top[0][0]} / {top[1][0]} (?)"
+            orario[g][h] = " / ".join(m for m, _ in top) + " (?)"
     return orario
 
 
@@ -562,7 +585,8 @@ def main():
     print("[ok] accesso eseguito")
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
-    per_giorno = compiti_per_giorno(cv.agenda(giorni[0], giorni[-1]), cv.compiti_didattica(), giorni)
+    didattica = cv.compiti_didattica()
+    per_giorno = compiti_per_giorno(cv.agenda(giorni[0], giorni[-1]), didattica, giorni)
     if tutti:
         giorni = [g for g in giorni if per_giorno.get(str(g))] or giorni[:1]
 
@@ -572,7 +596,7 @@ def main():
         orario, origine = orario_da_csv(csv), "da orario.csv"
     else:
         try:
-            orario = orario_da_lezioni(cv.lezioni(oggi - timedelta(weeks=3), oggi))
+            orario = orario_da_lezioni(cv.lezioni(oggi - timedelta(weeks=4), oggi), oggi)
             origine = "RICOSTRUITO in automatico: può contenere errori, fa fede l'orario ufficiale della scuola"
         except requests.HTTPError:
             orario, origine = {}, ""
