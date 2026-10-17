@@ -1,0 +1,9 @@
+# FACOLTATIVO. Se il programma sbaglia l'orario, compilalo tu una volta sola:
+# copia questo file come  orario.csv  nella stessa cartella e scrivi una riga per ogni ora.
+# Formato:  giorno;ora;materia     (giorno: 1=lunedi 2=martedi ... 6=sabato)
+1;1;Italiano
+1;2;Storia
+1;3;Matematica
+1;4;Inglese
+1;5;Arte
+1;6;Musica

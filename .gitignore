@@ -1,0 +1,10 @@
+# ambiente Python
+.venv/
+__pycache__/
+# i fogli prodotti e i file di debug (contengono dati personali)
+compiti_*.html
+compiti_*.pdf
+compiti_*.txt
+debug_*.json
+# l'orario della TUA classe resta tuo
+orario.csv
