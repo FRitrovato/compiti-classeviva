@@ -22,7 +22,7 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 
 1. Le credenziali NON vengono salvate. Le scrivi ogni volta, e la password non compare sullo schermo.
 2. Il programma parla SOLO con il server di Spaggiari. Non manda niente a nessun altro, nemmeno a me.
-3. I fogli prodotti NON contengono nomi di studenti, docenti o scuola. Solo la sigla della classe (tipo "3B"), che il programma legge da solo dal registro. Se non la vuoi: `--senza-classe`.
+3. I fogli prodotti NON contengono nomi di studenti, docenti o scuola. Solo la sigla della classe (tipo "3B"), che il programma legge da solo dal registro.
 4. Il codice è tutto qui, leggibile. Se non vi fidate, fatelo leggere a qualcuno di cui vi fidate. È giusto così.
 
 ## Attenzione: cosa NON è
@@ -70,7 +70,6 @@ compiti.sh                         tutti i compiti in arrivo + orario
 compiti.sh --domani                solo il prossimo giorno di scuola
 compiti.sh --data 2026-10-16       un giorno preciso
 compiti.sh --dal 2026-10-19 --al 2026-10-23
-compiti.sh --senza-classe          senza la sigla della classe in testa al foglio
 compiti.sh --sabato                se la scuola fa lezione anche il sabato
 ```
 

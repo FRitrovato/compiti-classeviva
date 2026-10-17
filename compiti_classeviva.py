@@ -22,7 +22,6 @@ Uso:
     python compiti_classeviva.py --domani        # solo il prossimo giorno di scuola
     python compiti_classeviva.py --data 2026-10-16
     python compiti_classeviva.py --dal 2026-10-19 --al 2026-10-23
-    python compiti_classeviva.py --senza-classe  # senza il nome della classe in testa al foglio
 
 Licenza GPL-3.0. Ciao / Francesco Ritrovato
 
@@ -549,8 +548,6 @@ def main():
     ap.add_argument("--al", help="fine periodo, AAAA-MM-GG (default: uguale a --dal)")
     ap.add_argument("--classe", default="",
                     help="nome della classe in testa al foglio (di solito non serve: lo legge dal registro)")
-    ap.add_argument("--senza-classe", action="store_true",
-                    help="non scrivere il nome della classe in testa al foglio")
     ap.add_argument("--sabato", action="store_true", help="la scuola fa lezione anche il sabato")
     ap.add_argument("--uscita", default=".", help="cartella dove salvare i file (default: quella corrente)")
     ap.add_argument("--no-open", action="store_true", help="non aprire il foglio nel browser alla fine")
@@ -599,8 +596,7 @@ def main():
         password = None  # non la teniamo in giro piu' del necessario
     print("[ok] accesso eseguito")
     # La classe: quella scritta a mano con --classe, altrimenti quella del registro.
-    # Con --senza-classe non compare proprio.
-    classe = "" if a.senza_classe else (a.classe.strip() or cv.classe)
+    classe = a.classe.strip() or cv.classe
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
     didattica = cv.compiti_didattica()
