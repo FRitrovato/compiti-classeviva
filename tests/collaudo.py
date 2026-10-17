@@ -16,14 +16,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import compiti_classeviva as m  # noqa: E402
 
 uscita = Path(tempfile.mkdtemp())
-sys.argv = ["compiti_classeviva.py", "--classe", "2A", "--no-open", "--uscita", str(uscita)]
+sys.argv = ["compiti_classeviva.py", "--no-open", "--uscita", str(uscita)]
 
 oggi = date.today()
 g1 = m.prossimo_giorno_scuola(oggi, False)
 g2 = m.prossimo_giorno_scuola(g1, False)
 
 # Il finto ClasseViva: risponde sempre le stesse cose.
-m.ClasseViva.accedi = lambda self: setattr(self, "id", "1")
+def finto_accesso(self):
+    self.id, self.classe = "1", "3B"   # la classe la "dice" il registro finto
+m.ClasseViva.accedi = finto_accesso
 m.ClasseViva.agenda = lambda self, a, b=None: [
     {"evtCode": "AGNT", "notes": "Portare il goniometro",
      "evtDatetimeBegin": f"{g1}T00:00:00+02:00", "authorName": "Docente"}]
@@ -53,7 +55,7 @@ assert len(pagine) == 1 and len(pdf) == 1 and len(testi) == 1, list(uscita.iterd
 
 html = pagine[0].read_text(encoding="utf-8")
 testo = testi[0].read_text(encoding="utf-8")
-for atteso in ("Classe 2A", "Geometria: aree pag. 99", "Portare il goniometro",
+for atteso in ("Classe 3B", "Geometria: aree pag. 99", "Portare il goniometro",
                "città e perché", "Orario settimanale", "diario scritto a mano"):
     assert atteso in html, f"nella pagina manca: {atteso}"
 assert "CONTENERE ERRORI" in html, "manca l'avviso sull'orario nella pagina"

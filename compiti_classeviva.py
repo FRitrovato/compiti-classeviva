@@ -22,7 +22,7 @@ Uso:
     python compiti_classeviva.py --domani        # solo il prossimo giorno di scuola
     python compiti_classeviva.py --data 2026-10-16
     python compiti_classeviva.py --dal 2026-10-19 --al 2026-10-23
-    python compiti_classeviva.py --classe 2A     # il nome che compare in testa al foglio
+    python compiti_classeviva.py --senza-classe  # senza il nome della classe in testa al foglio
 
 Licenza GPL-3.0. Ciao / Francesco Ritrovato
 
@@ -80,6 +80,8 @@ class ClasseViva:
         # rest/w1 (nuovo) oppure rest/v1 (classico): lo decide il login che va a buon fine.
         self.rest = None
         self.debug = debug
+        # La classe dello studente (es. "3B"): la dice il registro stesso, al login.
+        self.classe = ""
 
     def _dump(self, nome, dati):
         # Solo con --debug: salva la risposta grezza, cosi' vediamo cosa dice davvero il server.
@@ -117,6 +119,8 @@ class ClasseViva:
         self._dump("whoami", info)
         if not self.id:
             self.id = str(info["id"])
+        # "classe_ident" e' la sigla della classe, tipo "3B". Nient'altro: niente nomi, niente scuola.
+        self.classe = str(info.get("classe_ident") or "").strip()
 
     def _accedi_v1(self):
         # Il login storico: un JSON con utente e password, in cambio un TOKEN.
@@ -213,10 +217,10 @@ def orario_da_lezioni(lezioni, oggi=None):
     # Il PIANO B, quando orario.csv non c'e'.
     # Per ogni casella (giorno, ora) contiamo le materie firmate dai docenti.
     # Le ultime due settimane valgono DOPPIO: l'orario di settembre spesso e' provvisorio.
-    # Sulla 2A, ottobre 2026, confrontato con l'orario ufficiale: da 11 a 18 caselle giuste su 30.
+    # Su una classe reale (ottobre 2026), confrontato con l'orario ufficiale: da 11 a 18 caselle giuste su 30.
     #
     # E i compiti? Le date di consegna dicono in quali GIORNI c'e' una materia, e li abbiamo
-    # provati: anche solo come spareggio, sulla 2A peggioravano il risultato. Gli errori veri
+    # provati: anche solo come spareggio, su una classe reale peggioravano il risultato. Gli errori veri
     # sono tra materie dello stesso docente negli stessi giorni (es. Matematica e Scienze),
     # e li' sapere il giorno non serve. Misurato, non supposto: per questo NON li usiamo.
     #
@@ -535,7 +539,10 @@ def main():
     ap.add_argument("--data", help="un solo giorno, AAAA-MM-GG")
     ap.add_argument("--dal", help="inizio periodo, AAAA-MM-GG")
     ap.add_argument("--al", help="fine periodo, AAAA-MM-GG (default: uguale a --dal)")
-    ap.add_argument("--classe", default="", help="nome della classe da mettere in testa al foglio, es. 2A")
+    ap.add_argument("--classe", default="",
+                    help="nome della classe in testa al foglio (di solito non serve: lo legge dal registro)")
+    ap.add_argument("--senza-classe", action="store_true",
+                    help="non scrivere il nome della classe in testa al foglio")
     ap.add_argument("--sabato", action="store_true", help="la scuola fa lezione anche il sabato")
     ap.add_argument("--uscita", default=".", help="cartella dove salvare i file (default: quella corrente)")
     ap.add_argument("--no-open", action="store_true", help="non aprire il foglio nel browser alla fine")
@@ -583,6 +590,9 @@ def main():
     finally:
         password = None  # non la teniamo in giro piu' del necessario
     print("[ok] accesso eseguito")
+    # La classe: quella scritta a mano con --classe, altrimenti quella del registro.
+    # Con --senza-classe non compare proprio.
+    classe = "" if a.senza_classe else (a.classe.strip() or cv.classe)
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
     didattica = cv.compiti_didattica()
@@ -609,10 +619,10 @@ def main():
     base = uscita / nome
     pagina = base.with_suffix(".html")
     ricostruito = not csv.exists()
-    pagina.write_text(pagina_completa(a.classe, orario, giorni, per_giorno, ricostruito), encoding="utf-8")
+    pagina.write_text(pagina_completa(classe, orario, giorni, per_giorno, ricostruito), encoding="utf-8")
     print(f"[ok] pagina  -> {pagina}")
     if genera_pdf(base.with_suffix(".pdf"), giorni, orario, origine, per_giorno,
-                  f"Classe {a.classe}" if a.classe else ""):
+                  f"Classe {classe}" if classe else ""):
         print(f"[ok] PDF     -> {base.with_suffix('.pdf')}")
     else:
         print("[i] per avere anche il PDF:  pip install reportlab  (intanto stampa la pagina)")
