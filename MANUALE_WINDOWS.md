@@ -106,4 +106,13 @@ Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel no
 - Parla solo con il server di ClasseViva, non manda i tuoi dati a nessun altro.
 - **Non è un prodotto Spaggiari né della scuola**: l'ha fatto un genitore, gratis. Se un giorno smette di funzionare, è perché Spaggiari ha cambiato qualcosa.
 
+---
+
+## Chi l'ha fatto
+
+Francesco, **Executive Senior Chief Global Cybersecurity Officer of Compiti, Orari & Zaini**.
+Tradotto: un papà che di giorno si occupa di sicurezza informatica e la sera combatte con il registro elettronico come tutti.
+
+Racconto la sicurezza digitale in forma di storie sul blog **Cronache del Sottosopra** (www.cronachesottosopra.it), da cui è nato anche un libro. Il programma invece resta gratuito, per sempre.
+
 Ciao / Francesco
