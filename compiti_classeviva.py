@@ -35,6 +35,7 @@ import html
 import json
 import re
 import sys
+import unicodedata
 import webbrowser
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
@@ -75,6 +76,23 @@ def sigla_classe(descrizione):
 # ================================================================ ACCESSO
 # Tutto quello che parla con Spaggiari sta qui dentro.
 # Il resto del programma non sa nemmeno che esiste un server.
+def scegli_figlio(scelte):
+    """Piu' figli sullo stesso account: chiede quale. Con uno solo, niente domande."""
+    if len(scelte) == 1:
+        return scelte[0]
+    print("\n  Su questo account ci sono piu' figli. Di chi vuoi i compiti?")
+    for n, c in enumerate(scelte, 1):
+        # "Genitore di ROSSI MARIO" -> "ROSSI MARIO". Senza accenti: la console di Windows li storpia.
+        nome = str(c.get("name", "")).replace("Genitore di ", "")
+        nome = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode()
+        print(f"    {n}. {nome}")
+    while True:
+        r = input(f"  Scrivi il numero (1-{len(scelte)}) e premi Invio: ").strip()
+        if r.isdigit() and 1 <= int(r) <= len(scelte):
+            return scelte[int(r) - 1]
+        print("  Numero non valido, riprova.")
+
+
 class ClasseViva:
     def __init__(self, utente, password, studente_id=None, debug=False, target="genitori"):
         # target: "genitori" o "studenti". Per noi e' quasi sempre genitori.
@@ -131,20 +149,30 @@ class ClasseViva:
 
     def _accedi_v1(self):
         # Il login storico: un JSON con utente e password, in cambio un TOKEN.
-        r = self.s.post(f"{BASE}/rest/v1/auth/login",
-                        json={"ident": None, "uid": self.utente, "pass": self.password},
-                        timeout=15)
-        dati = r.json()
-        # Nel dump il token NON ci va: e' una chiave di casa, non si lascia sul tavolo.
-        self._dump("login_v1", {k: v for k, v in dati.items() if k != "token"})
+        dati = self._login_v1(None)
+        # Genitore con PIU' FIGLI nella stessa scuola: il registro non sa quale e chiede di scegliere.
+        # Risponde con l'elenco ("choices") e vuole indietro l'"ident" del figlio scelto.
+        scelte = dati.get("choices") or []
+        if "token" not in dati and scelte:
+            dati = self._login_v1(scegli_figlio(scelte)["ident"])
         if "token" not in dati:
-            raise SystemExit(f"Login fallito: {dati.get('error') or dati}")
+            # NIENTE risposta grezza a schermo: dentro ci sono nomi e codici. Solo il messaggio.
+            raise SystemExit(f"Login fallito: {dati.get('error') or dati.get('message') or 'risposta inattesa (riprova con --debug)'}")
         # Da qui in poi ogni richiesta porta il token nell'header.
         self.s.headers["Z-Auth-Token"] = dati["token"]
         self.rest = f"{BASE}/rest/v1"
         if not self.id:
             # ident e' tipo "S1234567X": ci servono solo le cifre.
             self.id = "".join(c for c in dati["ident"] if c.isdigit())
+
+    def _login_v1(self, ident):
+        r = self.s.post(f"{BASE}/rest/v1/auth/login",
+                        json={"ident": ident, "uid": self.utente, "pass": self.password},
+                        timeout=15)
+        dati = r.json()
+        # Nel dump il token NON ci va: e' una chiave di casa, non si lascia sul tavolo.
+        self._dump("login_v1", {k: v for k, v in dati.items() if k != "token"})
+        return dati
 
     def get(self, percorso, nome):
         # Il mattone di tutte le letture: GET su /students/{id}/qualcosa, risposta in JSON.

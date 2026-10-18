@@ -69,3 +69,27 @@ assert m.sigla_classe("2A MEDIA") == "2A" and m.sigla_classe("3b liceo") == "3B"
 assert m.sigla_classe("1234567") == "" and m.sigla_classe(None) == "" and m.sigla_classe("") == ""
 
 print("COLLAUDO OK: pagina, PDF e testo WhatsApp prodotti correttamente, nessuna credenziale nei fogli.")
+
+# Genitore con DUE figli: il registro chiede quale. Il programma deve chiederlo e riprovare con l'ident giusto.
+class FintaSessione:
+    def __init__(self):
+        self.headers, self.inviati = {}, []
+    def post(self, url, json=None, **kw):
+        self.inviati.append(json["ident"])
+        class R:
+            pass
+        r = R()
+        if json["ident"] is None:
+            r.json = lambda: {"choices": [{"ident": "G1111111A", "name": "Genitore di ROSSI ANNA"},
+                                          {"ident": "X2222222B", "name": "Genitore di ROSSI LUCÌA"}],
+                              "message": "you must provide a value for the \"ident\" field"}
+        else:
+            r.json = lambda: {"token": "tok", "ident": json["ident"]}
+        return r
+cv = m.ClasseViva("genitore@example.com", "password-finta")
+cv.s = FintaSessione()
+builtins.input = lambda prompt="": "2"
+cv._accedi_v1()
+assert cv.s.inviati == [None, "X2222222B"], cv.s.inviati
+assert cv.id == "2222222", cv.id
+print("COLLAUDO OK: con due figli chiede quale e accede con quello scelto.")
