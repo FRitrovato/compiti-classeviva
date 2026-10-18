@@ -106,7 +106,7 @@ La prima volta che lo lanci si ripreparerà (uno o due minuti). Python non va re
 
 ## Dove finiscono i fogli
 
-Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel nome:
+Nella cartella del programma trovi tre file nuovi ogni volta, con la classe e la data nel nome (per esempio **compiti_2A_2026-10-19.pdf**). Se hai più figli, i fogli di ognuno restano separati:
 
 - **compiti_....html**: la pagina da aprire nel browser (doppio clic);
 - **compiti_....pdf**: pronto da stampare o da mandare;

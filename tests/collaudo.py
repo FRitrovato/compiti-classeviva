@@ -52,6 +52,7 @@ pagine = list(uscita.glob("compiti_*.html"))
 pdf = list(uscita.glob("compiti_*.pdf"))
 testi = list(uscita.glob("compiti_*.txt"))
 assert len(pagine) == 1 and len(pdf) == 1 and len(testi) == 1, list(uscita.iterdir())
+assert pagine[0].name.startswith("compiti_3B_"), pagine[0].name  # la classe nel nome: piu' figli, niente sovrascritture
 
 html = pagine[0].read_text(encoding="utf-8")
 testo = testi[0].read_text(encoding="utf-8")
@@ -99,3 +100,9 @@ assert m.classe_da_lezioni([{"classDesc": "1C SCUOLA MEDIA"}, {"classDesc": "1C 
                             {"classDesc": "3F"}, {}]) == "1C"
 assert m.classe_da_lezioni([]) == "" and m.classe_da_lezioni([{"classDesc": "999"}]) == ""
 print("COLLAUDO OK: classe ricavata dalle lezioni quando il registro non la dice al login.")
+
+# E con TRE figli? L'elenco e' lungo quanto serve: si sceglie il terzo.
+tre = [{"ident": f"G{i}", "name": f"Genitore di ROSSI FIGLIO{i}"} for i in (1, 2, 3)]
+builtins.input = lambda prompt="": "3"
+assert m.scegli_figlio(tre)["ident"] == "G3"
+print("COLLAUDO OK: con tre figli si sceglie anche il terzo.")

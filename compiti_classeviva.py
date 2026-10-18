@@ -680,8 +680,13 @@ def main():
     # 6. I file.
     uscita = Path(a.uscita).expanduser()
     uscita.mkdir(parents=True, exist_ok=True)
-    nome = (f"compiti_{giorni[0]:%Y-%m-%d}" if len(giorni) == 1
-            else f"compiti_{giorni[0]:%Y-%m-%d}_{giorni[-1]:%Y-%m-%d}")
+    # La classe nel nome del file: chi ha piu' figli lancia il programma una volta per figlio,
+    # e con la sola data il secondo giro cancellerebbe i fogli del primo.
+    # compiti_2A_2026-10-19.pdf, compiti_3C_2026-10-19.pdf: uno accanto all'altro.
+    # (Due figli nella STESSA classe? Stesso nome, ma anche stessi compiti: nessun danno.)
+    prefisso = f"compiti_{classe}_" if classe else "compiti_"
+    nome = (f"{prefisso}{giorni[0]:%Y-%m-%d}" if len(giorni) == 1
+            else f"{prefisso}{giorni[0]:%Y-%m-%d}_{giorni[-1]:%Y-%m-%d}")
     base = uscita / nome
     pagina = base.with_suffix(".html")
     ricostruito = not csv.exists()
