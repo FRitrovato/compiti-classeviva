@@ -93,6 +93,13 @@ def scegli_figlio(scelte):
         print("  Numero non valido, riprova.")
 
 
+def classe_da_lezioni(lezioni):
+    """La sigla piu' frequente nelle lezioni firmate ("classDesc": "2A ..."). Se non c'e', niente."""
+    conta = Counter(sigla_classe(l.get("classDesc")) for l in lezioni)
+    conta.pop("", None)
+    return conta.most_common(1)[0][0] if conta else ""
+
+
 class ClasseViva:
     def __init__(self, utente, password, studente_id=None, debug=False, target="genitori"):
         # target: "genitori" o "studenti". Per noi e' quasi sempre genitori.
@@ -623,6 +630,13 @@ def main():
     print("[ok] accesso eseguito")
     # La classe la dice il registro stesso: nessuno deve scriverla.
     classe = cv.classe
+    if not classe:
+        # Con il login classico (genitori con piu' figli) il "chi sono" non c'e'.
+        # Ma ogni lezione firmata riporta la classe: chiediamo quelle delle ultime due settimane.
+        try:
+            classe = classe_da_lezioni(cv.lezioni(date.today() - timedelta(weeks=2), date.today()))
+        except Exception:
+            classe = ""   # pazienza: il foglio esce lo stesso, senza sigla in testa
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
     didattica = cv.compiti_didattica()

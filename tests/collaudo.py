@@ -93,3 +93,9 @@ cv._accedi_v1()
 assert cv.s.inviati == [None, "X2222222B"], cv.s.inviati
 assert cv.id == "2222222", cv.id
 print("COLLAUDO OK: con due figli chiede quale e accede con quello scelto.")
+
+# Senza "chi sono" (login classico) la classe si ricava dalle lezioni firmate.
+assert m.classe_da_lezioni([{"classDesc": "1C SCUOLA MEDIA"}, {"classDesc": "1C SCUOLA MEDIA"},
+                            {"classDesc": "3F"}, {}]) == "1C"
+assert m.classe_da_lezioni([]) == "" and m.classe_da_lezioni([{"classDesc": "999"}]) == ""
+print("COLLAUDO OK: classe ricavata dalle lezioni quando il registro non la dice al login.")
