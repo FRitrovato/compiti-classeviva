@@ -8,6 +8,8 @@ da leggere sul telefono o stampare in A4.
 
 Cosa fa:
   1. chiede le credenziali ClasseViva del genitore (NON le salva da nessuna parte);
+     se sull'account ci sono piu' figli, chiede di quale;
+     la classe (tipo "3B") la legge da solo dal registro: nessuno la deve scrivere;
   2. scarica i compiti in arrivo (Agenda + Didattica) e li raggruppa per giorno;
   3. aggiunge l'orario: da orario.csv se c'e', altrimenti ricostruito dal registro;
   4. prepara tre file: una pagina HTML (con bottone Stampa), un PDF, un testo per WhatsApp.
@@ -73,19 +75,33 @@ def sigla_classe(descrizione):
     return prima.upper() if re.fullmatch(r"[1-5][A-Za-z]{1,3}", prima) else ""
 
 
-# ================================================================ ACCESSO
-# Tutto quello che parla con Spaggiari sta qui dentro.
-# Il resto del programma non sa nemmeno che esiste un server.
+def classe_da_lezioni(lezioni):
+    """La sigla che compare piu' spesso nelle lezioni firmate. Se non c'e', niente."""
+    # Il piano B per la classe. Ogni lezione firmata dal docente si porta dietro "classDesc"
+    # (tipo "2A SCUOLA MEDIA"). Serve quando il login non ci ha detto la classe:
+    # succede ai genitori con piu' figli, che entrano dalla porta classica (vedi _accedi_v1).
+    # Contiamo e prendiamo la piu' frequente: una supplenza in un'altra classe non ci frega.
+    conta = Counter(sigla_classe(l.get("classDesc")) for l in lezioni)
+    conta.pop("", None)   # le lezioni senza classe riconoscibile non votano
+    return conta.most_common(1)[0][0] if conta else ""
+
+
 def scegli_figlio(scelte):
-    """Piu' figli sullo stesso account: chiede quale. Con uno solo, niente domande."""
+    """Piu' figli sullo stesso account: chiede di quale. Con uno solo, nessuna domanda."""
+    # Il registro ci manda una lista tipo:
+    #   [{"ident": "G1234567X", "name": "Genitore di ROSSI MARIO", ...}, {...}]
+    # Il nome lo mostriamo SOLO qui, sullo schermo di chi ha appena scritto la password.
+    # Nei fogli (pagina, PDF, WhatsApp) non finisce mai.
     if len(scelte) == 1:
         return scelte[0]
     print("\n  Su questo account ci sono piu' figli. Di chi vuoi i compiti?")
     for n, c in enumerate(scelte, 1):
-        # "Genitore di ROSSI MARIO" -> "ROSSI MARIO". Senza accenti: la console di Windows li storpia.
+        # "Genitore di ROSSI MARIO" -> "ROSSI MARIO".
+        # Via gli accenti: la finestra nera di Windows li trasforma in geroglifici.
         nome = str(c.get("name", "")).replace("Genitore di ", "")
         nome = unicodedata.normalize("NFKD", nome).encode("ascii", "ignore").decode()
         print(f"    {n}. {nome}")
+    # Si insiste con gentilezza finche' non arriva un numero sensato.
     while True:
         r = input(f"  Scrivi il numero (1-{len(scelte)}) e premi Invio: ").strip()
         if r.isdigit() and 1 <= int(r) <= len(scelte):
@@ -93,13 +109,9 @@ def scegli_figlio(scelte):
         print("  Numero non valido, riprova.")
 
 
-def classe_da_lezioni(lezioni):
-    """La sigla piu' frequente nelle lezioni firmate ("classDesc": "2A ..."). Se non c'e', niente."""
-    conta = Counter(sigla_classe(l.get("classDesc")) for l in lezioni)
-    conta.pop("", None)
-    return conta.most_common(1)[0][0] if conta else ""
-
-
+# ================================================================ ACCESSO
+# Tutto quello che parla con Spaggiari sta qui dentro.
+# Il resto del programma non sa nemmeno che esiste un server.
 class ClasseViva:
     def __init__(self, utente, password, studente_id=None, debug=False, target="genitori"):
         # target: "genitori" o "studenti". Per noi e' quasi sempre genitori.
@@ -130,7 +142,12 @@ class ClasseViva:
             self._accedi_web()
             return
         except Exception as e:
-            print(f"[i] login web non riuscito ({e}), provo il login classico...")
+            # Non e' un errore: ai genitori con piu' figli succede SEMPRE (il registro vuole
+            # sapere quale figlio, e la porta web non sa chiederlo). Messaggio tranquillo;
+            # i dettagli tecnici solo con --debug, per chi li sa leggere.
+            print("[i] primo ingresso non riuscito, provo il secondo...")
+            if self.debug:
+                print(f"    dettaglio: {e}")
         self._accedi_v1()
 
     def _accedi_web(self):
@@ -156,9 +173,13 @@ class ClasseViva:
 
     def _accedi_v1(self):
         # Il login storico: un JSON con utente e password, in cambio un TOKEN.
+        # Primo tentativo SENZA dire quale figlio ("ident": None). Con un figlio solo basta cosi'.
         dati = self._login_v1(None)
-        # Genitore con PIU' FIGLI nella stessa scuola: il registro non sa quale e chiede di scegliere.
-        # Risponde con l'elenco ("choices") e vuole indietro l'"ident" del figlio scelto.
+        # Genitore con PIU' FIGLI: il registro non sa di chi parliamo e invece del token risponde
+        #   {"choices": [ ...un elemento per figlio... ],
+        #    "message": 'you must provide a value for the "ident" field of payload'}
+        # Allora chiediamo al genitore quale figlio e riproviamo con il suo "ident".
+        # Visto davvero, il 18 ottobre 2026, sull'account di un papa' con due figli.
         scelte = dati.get("choices") or []
         if "token" not in dati and scelte:
             dati = self._login_v1(scegli_figlio(scelte)["ident"])
@@ -173,6 +194,7 @@ class ClasseViva:
             self.id = "".join(c for c in dati["ident"] if c.isdigit())
 
     def _login_v1(self, ident):
+        # Una sola chiamata di login. ident=None: "fai tu". ident="G1234567X": "quel figlio li'".
         r = self.s.post(f"{BASE}/rest/v1/auth/login",
                         json={"ident": ident, "uid": self.utente, "pass": self.password},
                         timeout=15)

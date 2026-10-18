@@ -59,6 +59,18 @@ Fatto. Python non lo vedrai mai più: lavora dietro le quinte.
     scrivi la password e premi **Invio**.
     **ATTENZIONE:** mentre scrivi la password NON compare niente, nemmeno gli asterischi. È voluto, per sicurezza. Scrivi lo stesso e premi Invio.
 
+    **Se hai più di un figlio** nella stessa scuola, a questo punto compare l'elenco:
+
+    ```
+    Su questo account ci sono piu' figli. Di chi vuoi i compiti?
+      1. ROSSI MARIO
+      2. ROSSI ANNA
+    Scrivi il numero (1-2) e premi Invio:
+    ```
+
+    Scrivi il numero del figlio (per esempio **1**) e premi **Invio**. Per l'altro figlio, rilancia il programma e scegli l'altro numero.
+    Prima dell'elenco può comparire la scritta "primo ingresso non riuscito, provo il secondo...": è normale, non è un errore.
+
 6. Dopo qualche secondo si apre il **browser** con il foglio:
     - in alto, i **compiti in arrivo**, giorno per giorno;
     - in basso, l'**orario della settimana**;
@@ -78,6 +90,20 @@ Solo la **PARTE 3**: doppio clic su **AVVIA-WINDOWS**, codice, password, ecco il
 
 ---
 
+## Quando esce una versione nuova
+
+Ogni tanto il programma viene migliorato. Per avere l'ultima versione:
+
+1. Cancella la vecchia cartella **compiti-classeviva-main** (tasto destro > **Elimina**).
+    Se dentro avevi messo il file **orario.csv**, prima copialo sul Desktop, così non lo perdi.
+2. Rifai la **PARTE 2** (scaricare lo ZIP ed estrarlo).
+3. Se l'avevi, rimetti **orario.csv** dentro la nuova cartella.
+4. Se avevi creato il collegamento sul Desktop, cancellalo e rifallo (vedi "Le volte successive").
+
+La prima volta che lo lanci si ripreparerà (uno o due minuti). Python non va reinstallato.
+
+---
+
 ## Dove finiscono i fogli
 
 Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel nome:
@@ -93,9 +119,11 @@ Nella cartella del programma trovi tre file nuovi ogni volta, con la data nel no
 | Cosa succede | Cosa fare |
 |---|---|
 | **"Manca Python 3"** | Ripeti la PARTE 1. Probabilmente mancava la spunta su **"Add python.exe to PATH"**: reinstalla e mettila. |
+| **Compare un elenco di nomi con dei numeri** | Hai più figli sullo stesso account: scrivi il numero del figlio di cui vuoi i compiti e premi Invio. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **La finestra nera si chiude subito** | Fai clic con il tasto destro su **AVVIA-WINDOWS** e scegli **Apri**. Se ancora non va, riavvia il computer e riprova. |
 | **L'orario è sbagliato** | Può succedere: il programma lo ricostruisce dal registro e a volte sbaglia, soprattutto quando un docente insegna più materie. Fa fede l'orario ufficiale della scuola. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
+| **In alto al foglio non c'è la classe** | Il programma non è riuscito a leggerla dal registro (succede, per esempio, a inizio anno prima che i docenti firmino le lezioni). Compiti e orario ci sono lo stesso. |
 | **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**. |
 
 ---

@@ -11,6 +11,7 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 ## Cosa fa
 
 1. Ti chiede codice utente e password ClasseViva del **genitore**.
+   Se sull'account ci sono più figli, ti chiede di quale.
 2. Scarica i compiti in arrivo (Agenda + Didattica) e li mette in ordine per giorno di consegna.
 3. Aggiunge l'orario della settimana.
 4. Prepara tre file:
@@ -89,6 +90,10 @@ Se volete l'orario giusto al 100%, scrivetelo una volta sola:
 3. da lì in poi il programma usa quello.
 
 Un consiglio: uno lo compila, e lo gira agli altri genitori della classe.
+
+## Aggiornare
+
+Quando esce una versione nuova: si cancella la vecchia cartella (salvando prima `orario.csv`, se c'è) e si riscarica lo ZIP. Python non va reinstallato. I manuali spiegano i passi.
 
 ## Se qualcosa non va
 
