@@ -107,7 +107,7 @@ Quando esce una versione nuova: si cancella la vecchia cartella (salvando prima 
 Francesco, **Executive Senior Chief Global Cybersecurity Officer of Compiti, Orari & Zaini**.
 Tradotto: un papà che di giorno si occupa di sicurezza informatica e la sera combatte con il registro elettronico come tutti.
 
-Racconto la sicurezza digitale in forma di storie sul blog [Cronache del Sottosopra](https://www.cronachesottosopra.it/articoli/), da cui è nato anche un libro. Il programma invece resta gratuito, per sempre.
+Racconto la sicurezza digitale in forma di storie sul blog [Cronache del Sottosopra](https://www.cronachesottosopra.it/articoli/), da cui è nato anche [un libro](https://www.cronachesottosopra.it/). Il programma invece resta gratuito, per sempre.
 
 ## Licenza
 
