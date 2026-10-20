@@ -106,3 +106,16 @@ tre = [{"ident": f"G{i}", "name": f"Genitore di ROSSI FIGLIO{i}"} for i in (1, 2
 builtins.input = lambda prompt="": "3"
 assert m.scegli_figlio(tre)["ident"] == "G3"
 print("COLLAUDO OK: con tre figli si sceglie anche il terzo.")
+
+# Le annotazioni dell'Agenda arrivano SENZA materia: la ricaviamo dal docente che le ha scritte.
+lez = [{"authorName": "Prof A", "subjectDesc": "SECONDA LINGUA COMUNITARIA"}] * 5 + \
+      [{"authorName": "Prof A", "subjectDesc": "SUPPLENZA"}] * 9 + \
+      [{"authorName": "Prof B", "subjectDesc": "ITALIANO"}] * 3 + \
+      [{"authorName": "Prof B", "subjectDesc": "EDUCAZIONE CIVICA"}] * 6
+doc = m.materie_dei_docenti(lez)
+assert doc == {"Prof A": "SECONDA LINGUA COMUNITARIA", "Prof B": "ITALIANO"}, doc
+nota = [{"evtCode": "AGNT", "notes": "Studiare pag 14", "authorName": "Prof A",
+         "evtDatetimeBegin": f"{g1}T00:00:00+02:00"}]
+riga = m.compiti_per_giorno(nota, [], [g1], doc)[str(g1)][0]
+assert riga["materia"] == "Seconda Lingua Comunitaria", riga
+print("COLLAUDO OK: le annotazioni dell'Agenda prendono la materia del docente.")

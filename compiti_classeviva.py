@@ -333,7 +333,26 @@ def _riga(materia, docente, testo, tipo):
             "docente": (docente or "").strip().title(), "testo": testo.strip()}
 
 
-def compiti_per_giorno(eventi, didattica, giorni):
+def materie_dei_docenti(lezioni):
+    """Docente -> la materia che insegna di piu' in questa classe (dalle lezioni firmate)."""
+    # Serve alle ANNOTAZIONI dell'Agenda: il registro le manda SENZA materia, solo con il
+    # nome di chi le ha scritte. Senza questo, sul foglio uscivano come "Avviso".
+    # Visto davvero il 20 ottobre 2026: "Studiare pag 14 e 16, i numeri vanno imparati"
+    # era della prof di Francese, e il foglio diceva "Avviso".
+    # Il nome del docente lo usiamo SOLO qui, come chiave: sui fogli non finisce mai.
+    conta = defaultdict(Counter)
+    for l in lezioni:
+        materia = (l.get("subjectDesc") or "").strip()
+        # Supplenze e sostegno non dicono cosa insegna davvero. Educazione civica la fanno
+        # in tanti: se vincesse lei, la prof di Italiano diventerebbe "Educazione Civica".
+        if not materia or any(x in materia.lower() for x in ("sostegno", "supplenza", "educazione civica")):
+            continue
+        conta[(l.get("authorName") or "").strip()][materia] += 1
+    # Chi insegna due materie (Matematica e Scienze) finisce sotto quella con piu' ore.
+    return {doc: c.most_common(1)[0][0] for doc, c in conta.items() if doc}
+
+
+def compiti_per_giorno(eventi, didattica, giorni, docenti=None):
     """Unisce agenda e compiti di Didattica, raggruppati per giorno di consegna."""
     # Il cuore del programma. Due fonti, un'unica lista, ZERO doppioni.
     per_id = {h.get("evtId"): h for h in didattica}
@@ -354,7 +373,9 @@ def compiti_per_giorno(eventi, didattica, giorni):
             usati.add(hw.get("evtId"))
         if testo.strip():
             tipo = "Compito" if e.get("evtCode") == "AGHW" else "Annotazione"
-            per_giorno[g].append(_riga(e.get("subjectDesc"), e.get("authorName"), testo, tipo))
+            # La materia: quella del registro; se manca (le annotazioni), quella del docente che l'ha scritta.
+            materia = e.get("subjectDesc") or (docenti or {}).get((e.get("authorName") or "").strip())
+            per_giorno[g].append(_riga(materia, e.get("authorName"), testo, tipo))
 
     # Giro 2: i compiti di Didattica che l'Agenda non nominava. Data che conta: la SCADENZA.
     for h in didattica:
@@ -651,18 +672,22 @@ def main():
         password = None  # non la teniamo in giro piu' del necessario
     print("[ok] accesso eseguito")
     # La classe la dice il registro stesso: nessuno deve scriverla.
+    # Le lezioni firmate dell'ultimo mese: le chiediamo UNA volta e servono a tre cose.
+    # La classe (se il login non l'ha detta), chi insegna cosa (per le annotazioni) e l'orario.
+    try:
+        lezioni = cv.lezioni(date.today() - timedelta(weeks=4), date.today())
+    except Exception:
+        lezioni = []   # pazienza: il foglio esce lo stesso, con qualcosa in meno
     classe = cv.classe
     if not classe:
         # Con il login classico (genitori con piu' figli) il "chi sono" non c'e'.
-        # Ma ogni lezione firmata riporta la classe: chiediamo quelle delle ultime due settimane.
-        try:
-            classe = classe_da_lezioni(cv.lezioni(date.today() - timedelta(weeks=2), date.today()))
-        except Exception:
-            classe = ""   # pazienza: il foglio esce lo stesso, senza sigla in testa
+        # Ma ogni lezione firmata riporta la classe.
+        classe = classe_da_lezioni(lezioni)
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
     didattica = cv.compiti_didattica()
-    per_giorno = compiti_per_giorno(cv.agenda(giorni[0], giorni[-1]), didattica, giorni)
+    per_giorno = compiti_per_giorno(cv.agenda(giorni[0], giorni[-1]), didattica, giorni,
+                                    materie_dei_docenti(lezioni))
     if tutti:
         giorni = [g for g in giorni if per_giorno.get(str(g))] or giorni[:1]
 
@@ -672,7 +697,7 @@ def main():
         orario, origine = orario_da_csv(csv), "da orario.csv"
     else:
         try:
-            orario = orario_da_lezioni(cv.lezioni(oggi - timedelta(weeks=4), oggi), oggi)
+            orario = orario_da_lezioni(lezioni, oggi)
             origine = "RICOSTRUITO in automatico: può contenere errori, fa fede l'orario ufficiale della scuola"
         except requests.HTTPError:
             orario, origine = {}, ""
