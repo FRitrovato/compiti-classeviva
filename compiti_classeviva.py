@@ -2,18 +2,27 @@
 """
 compiti_classeviva.py
 
-L'app ClasseViva non ha l'orario, e i compiti NON si possono stampare.
-Questo programma li prende dal registro e prepara un foglio pulito,
-da leggere sul telefono o stampare in A4.
+Scena tipica, ore 21:30.
+  "Hai fatto i compiti?"  "Sì."  "Quali?"  "Boh, non c'erano."  "E oggi in classe?"  "Niente."
+Ecco, questo programma esiste per quella scena.
+
+L'app ClasseViva i compiti li ha, ma sparsi tra Agenda e Didattica, e NON si stampano.
+Il programma li prende dal registro e prepara un foglio pulito, da leggere sul telefono,
+stampare in A4 o incollare nel gruppo WhatsApp. E ci aggiunge quello che l'app non ti dice.
 
 Cosa fa:
-  1. chiede le credenziali ClasseViva del genitore. Di base NON le salva; se vuoi,
-     le fa ricordare al portachiavi del sistema (mai in un file);
+  1. chiede codice e password ClasseViva del GENITORE. Di base NON li salva; se vuoi,
+     li fa ricordare al portachiavi del computer (MAI in un file);
      se sull'account ci sono piu' figli, chiede di quale;
      la classe (tipo "3B") la legge da solo dal registro: nessuno la deve scrivere;
-  2. scarica i compiti in arrivo (Agenda + Didattica) e li raggruppa per giorno;
-  3. aggiunge l'orario: da orario.csv se c'e', altrimenti ricostruito dal registro;
-  4. prepara tre file: una pagina HTML (con bottone Stampa), un PDF, un testo per WhatsApp.
+  2. scarica i compiti in arrivo (Agenda + Didattica), li mette in fila per giorno di
+     consegna e li segna: 📌 scritto in Agenda, 🆕 nuovo, ⚠️ verifica;
+  3. mette in cima le VERIFICHE dei prossimi 14 giorni, con il conto alla rovescia;
+  4. racconta cosa hanno fatto IN CLASSE, ora per ora, con l'argomento scritto dal docente.
+     Addio "niente";
+  5. l'orario della settimana SOLO se lo chiedi (--orario): ricostruito dal registro
+     puo' sbagliare, e lo zaino ormai lo sanno fare;
+  6. prepara tre file: una pagina HTML (con bottone Stampa), un PDF, un testo per WhatsApp.
 
 ATTENZIONE: usa l'API REST NON ufficiale, la stessa delle app Spaggiari
 (documentata da progetti open source come open-viva/endpoints e Classeviva.py).
@@ -21,17 +30,20 @@ Non e' un prodotto Spaggiari, ne' della scuola. Puo' smettere di funzionare
 in qualunque momento, se Spaggiari cambia qualcosa.
 
 Uso:
-    python compiti_classeviva.py                 # tutti i compiti in arrivo + orario
+    python compiti_classeviva.py                 # tutti i compiti in arrivo (il caso di tutti i giorni)
+    python compiti_classeviva.py --orario        # ...e in fondo anche l'orario della settimana
     python compiti_classeviva.py --domani        # solo il prossimo giorno di scuola
     python compiti_classeviva.py --data 2026-10-16
     python compiti_classeviva.py --dal 2026-10-19 --al 2026-10-23
     python compiti_classeviva.py --cambia-password   # nuova password (e la salva al posto della vecchia)
     python compiti_classeviva.py --dimentica         # cancella codice e password salvati
 
-Licenza GPL-3.0. Ciao / Francesco Ritrovato
+Licenza GPL-3.0. Gratis, aperto, per sempre. Ciao / Francesco Ritrovato
 
 PS: le credenziali restano tra te, Spaggiari e (se lo chiedi tu) il portachiavi del tuo
     computer. Il programma non le scrive in nessun file e non manda niente a nessun altro.
+    Nemmeno a me. Soprattutto a me.
+PPS: per i compiti fa fede il diario scritto a mano. Il programma e' solo un alleato.
 """
 
 import argparse
@@ -798,8 +810,9 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
                "Utile a chi era assente.</li>"
                "<li><em>(omesso)</em>: dove il docente aveva scritto nomi di alunni "
                "(per esempio «Interrogati: …»). Qui i nomi non si pubblicano.</li>"
-               "<li>🕒 <strong>Orario settimanale</strong>: in fondo; se è ricostruito dal registro può contenere errori.</li>"
-               "</ul>")
+               + ("<li>🕒 <strong>Orario settimanale</strong>: in fondo, solo se chiesto (--orario); "
+                  "se è ricostruito dal registro può contenere errori.</li>" if orario else "")
+               + "</ul>")
     out.append("<p><em>Dati presi dal registro elettronico. Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p>")
     return "\n".join(out)
 
@@ -859,6 +872,8 @@ def main():
     ap.add_argument("--dal", help="inizio periodo, AAAA-MM-GG")
     ap.add_argument("--al", help="fine periodo, AAAA-MM-GG (default: uguale a --dal)")
     ap.add_argument("--sabato", action="store_true", help="la scuola fa lezione anche il sabato")
+    ap.add_argument("--orario", action="store_true",
+                    help="aggiungi in fondo l'orario della settimana (di base NO: ricostruito puo' sbagliare)")
     ap.add_argument("--uscita", default=".", help="cartella dove salvare i file (default: quella corrente)")
     ap.add_argument("--no-open", action="store_true", help="non aprire il foglio nel browser alla fine")
     ap.add_argument("--cambia-password", action="store_true",
@@ -959,9 +974,13 @@ def main():
     if tutti:
         giorni = [g for g in giorni if per_giorno.get(str(g))] or giorni[:1]
 
-    # 5. L'orario. orario.csv accanto al programma vince sempre; altrimenti lo ricostruiamo.
+    # 5. L'orario. Solo se richiesto (--orario): ricostruito dal registro puo' sbagliare,
+    #    e un orario sbagliato e' peggio di nessun orario. Lo zaino, i ragazzi, ormai lo sanno fare.
+    #    Se c'e', orario.csv accanto al programma vince sempre sulla ricostruzione.
     csv = QUI / "orario.csv"
-    if csv.exists():
+    if not a.orario:
+        orario, origine = {}, ""
+    elif csv.exists():
         orario, origine = orario_da_csv(csv), "da orario.csv"
     else:
         try:
@@ -982,7 +1001,7 @@ def main():
             else f"{prefisso}{giorni[0]:%Y-%m-%d}_{giorni[-1]:%Y-%m-%d}")
     base = uscita / nome
     pagina = base.with_suffix(".html")
-    ricostruito = not csv.exists()
+    ricostruito = bool(orario) and not csv.exists()
     pagina.write_text(pagina_completa(classe, orario, giorni, per_giorno, ricostruito, diario), encoding="utf-8")
     print(f"[ok] pagina  -> {pagina}")
     if genera_pdf(base.with_suffix(".pdf"), giorni, orario, origine, per_giorno,
@@ -993,7 +1012,7 @@ def main():
     base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno, ricostruito, diario),
                                         encoding="utf-8")
     print(f"[ok] testo per WhatsApp -> {base.with_suffix('.txt')}")
-    if origine and not csv.exists():
+    if orario and not csv.exists():
         print("[i] l'orario e' ricostruito dal registro: se non torna, compila orario.csv (vedi il manuale)")
     if a.debug:
         print("[!] ATTENZIONE: i file debug_*.json contengono dati personali. Cancellali, non condividerli.")

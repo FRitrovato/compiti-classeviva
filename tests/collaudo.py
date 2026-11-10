@@ -17,7 +17,7 @@ import compiti_classeviva as m  # noqa: E402
 m._portachiavi = lambda: None   # MAI il portachiavi vero del computer di collaudo
 
 uscita = Path(tempfile.mkdtemp())
-sys.argv = ["compiti_classeviva.py", "--no-open", "--uscita", str(uscita)]
+sys.argv = ["compiti_classeviva.py", "--no-open", "--orario", "--uscita", str(uscita)]   # la prima volta CON l'orario
 
 oggi = date.today()
 g1 = m.prossimo_giorno_scuola(oggi, False)
@@ -190,6 +190,7 @@ txt = next(uscita.glob("compiti_*.txt")).read_text(encoding="utf-8")
 for atteso in ("solidi di rotazione", "Prova pratica", "Verifiche e interrogazioni in arrivo",
                "Riassunto lungo", "📌", "🆕", "Legenda", "Interrogati: (omesso)"):
     assert atteso in pag, f"nella pagina manca: {atteso}"
+assert "Orario settimanale" not in pag and "🕒" not in txt, "senza --orario l'orario NON deve esserci"
 for vietato in ("Rossi", "Bianchi", "segreto", "Sostegno"):
     assert vietato not in pag and vietato not in txt, f"non doveva comparire: {vietato}"
 assert "VERIFICHE IN ARRIVO" in txt and "📌" in txt, txt

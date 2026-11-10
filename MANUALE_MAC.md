@@ -1,6 +1,6 @@
 # Compiti ClasseViva: manuale per Mac
 
-Questo manuale ti accompagna passo passo. Non serve saper usare il computer più di tanto: basta seguire i passi nell'ordine, senza saltarne nessuno.
+Questo manuale ti accompagna passo passo. Non serve saper usare il computer più di tanto: basta seguire i passi nell'ordine, senza saltarne nessuno. Se sai mandare un vocale su WhatsApp, ce la fai.
 
 Tempo necessario: **circa 10 minuti la prima volta**. Le volte successive: **una riga da incollare**.
 
@@ -99,7 +99,7 @@ Sul Mac si usa il **Terminale**, una finestra dove si scrivono comandi. Sembra d
     - 📖 **in classe**: le lezioni dell'ultimo giorno di scuola, ora per ora, con l'**argomento** scritto dal docente, e i compiti dati quel giorno;
     - 📚 i **compiti in arrivo**, giorno per giorno. 📌 = scritto in Agenda, 🆕 = dato oggi o il giorno prima;
     - 🗓️ **il giorno prima**: lezioni e compiti del giorno di scuola precedente (utile se tuo figlio era assente);
-    - in fondo l'**orario della settimana** e la **legenda** dei simboli;
+    - in fondo la **legenda**: ogni simbolo spiegato;
     - il bottone blu **Stampa / salva PDF** per stamparlo.
 
 8. Il Terminale lo puoi chiudere (**Cmd + Q**).
@@ -139,6 +139,18 @@ La prima volta che lo lanci si ripreparerà (uno o due minuti). Python non va re
 
 ---
 
+## Vuoi anche l'orario?
+
+Di base il foglio **NON** ha l'orario della settimana: il registro non lo dà, il programma lo ricostruisce dalle lezioni firmate, e a volte sbaglia. Se lo vuoi lo stesso, nel Terminale incolla:
+
+```
+bash ~/Desktop/compiti-classeviva-main/compiti.sh --orario
+```
+
+L'orario compare in fondo al foglio, con un avviso se è ricostruito. **Fa fede l'orario ufficiale della scuola.**
+
+---
+
 ## Dove finiscono i fogli
 
 Nella cartella **compiti-classeviva-main** sulla Scrivania trovi tre file nuovi ogni volta, con la classe e la data nel nome (per esempio **compiti_2A_2026-10-19.pdf**). Se hai più figli, i fogli di ognuno restano separati:
@@ -159,15 +171,17 @@ Nella cartella **compiti-classeviva-main** sulla Scrivania trovi tre file nuovi 
 | **"Le credenziali salvate non funzionano più"** | Hai cambiato la password su ClasseViva (o è scaduta). Lancia `bash ~/Desktop/compiti-classeviva-main/compiti.sh --cambia-password` e scrivi quella nuova. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **Errore con la parola "certificate"** | Apri **Applicazioni** > cartella **Python 3...** > doppio clic su **Install Certificates.command**. Poi riprova. |
+| **Voglio anche l'orario** | Di base non c'è: ricostruito dal registro può sbagliare, e un orario sbagliato è peggio di nessun orario. Se lo vuoi lo stesso, aggiungi `--orario` (vedi "Vuoi anche l'orario?"). |
 | **L'orario è sbagliato** | Può succedere: il programma lo ricostruisce dal registro e a volte sbaglia, soprattutto quando un docente insegna più materie. Fa fede l'orario ufficiale della scuola. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |
-| **In alto al foglio non c'è la classe** | Il programma non è riuscito a leggerla dal registro (succede, per esempio, a inizio anno prima che i docenti firmino le lezioni). Compiti e orario ci sono lo stesso. |
+| **In alto al foglio non c'è la classe** | Il programma non è riuscito a leggerla dal registro (succede, per esempio, a inizio anno prima che i docenti firmino le lezioni). I compiti ci sono lo stesso. |
 | **Mancano dei compiti** | Alcuni docenti li scrivono come nota: compaiono come **Avviso**. Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**. |
 
 ---
 
 ## Da sapere
 
-- L'**orario** è ricostruito in automatico dal registro e **può contenere errori**: fa fede l'orario ufficiale della scuola.
+- L'**orario** c'è solo se lo chiedi con `--orario`. È ricostruito dal registro e **può contenere errori**: fa fede l'orario ufficiale della scuola.
+- Il programma **non fa i compiti** al posto dei ragazzi. Ci abbiamo provato. Scherzo.
 - Per i compiti fa sempre fede il **diario scritto a mano dall'alunno**: il programma è solo un aiuto in più.
 - Il programma **legge** soltanto: non modifica niente sul registro.
 - Parla solo con il server di ClasseViva, non manda i tuoi dati a nessun altro.
