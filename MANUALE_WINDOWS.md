@@ -72,13 +72,25 @@ Fatto. Python non lo vedrai mai più: lavora dietro le quinte.
     Prima dell'elenco può comparire la scritta "primo ingresso non riuscito, provo il secondo...": è normale, non è un errore.
 
 6. Dopo qualche secondo si apre il **browser** con il foglio:
-    - in alto, i **compiti in arrivo**, giorno per giorno;
-    - in basso, l'**orario della settimana**;
+    - ⚠️ le **verifiche e interrogazioni** dei prossimi 14 giorni, con il conto alla rovescia;
+    - 📖 **in classe**: le lezioni dell'ultimo giorno di scuola, ora per ora, con l'**argomento** scritto dal docente, e i compiti dati quel giorno;
+    - 📚 i **compiti in arrivo**, giorno per giorno. 📌 = scritto in Agenda, 🆕 = dato oggi o il giorno prima;
+    - 🗓️ **il giorno prima**: lezioni e compiti del giorno di scuola precedente (utile se tuo figlio era assente);
+    - in fondo l'**orario della settimana** e la **legenda** dei simboli;
     - il bottone blu **Stampa / salva PDF** per stamparlo.
 
 7. Nella finestra nera premi un tasto qualsiasi per chiuderla.
 
-**Le credenziali non vengono salvate:** le scrivi ogni volta. È più sicuro così.
+**Vuoi che il computer si ricordi codice e password?** Dopo il primo accesso il programma te lo chiede: rispondi **s** e premi Invio. Dalla volta dopo non li chiede più.
+Non finiscono in un file: li custodisce il **Gestione credenziali di Windows**, lo stesso posto dove il computer tiene le altre password. Se rispondi solo Invio, non viene salvato niente.
+
+**Hai cambiato la password di ClasseViva?** (Succede: ogni tanto ClasseViva la fa cambiare.) Il programma se ne accorge e ti dice di usare `--cambia-password`. Nella cartella del programma clicca sulla barra in alto dove c'è il percorso, scrivi **cmd** e premi Invio. Nella finestra nera scrivi:
+
+```
+AVVIA-WINDOWS.bat --cambia-password
+```
+
+Ti chiede di nuovo codice e password e li aggiorna. Per **cancellarli** dal computer, invece di `--cambia-password` usa `--dimentica`.
 
 ---
 
@@ -120,6 +132,7 @@ Nella cartella del programma trovi tre file nuovi ogni volta, con la classe e la
 |---|---|
 | **"Manca Python 3"** | Ripeti la PARTE 1. Probabilmente mancava la spunta su **"Add python.exe to PATH"**: reinstalla e mettila. |
 | **Compare un elenco di nomi con dei numeri** | Hai più figli sullo stesso account: scrivi il numero del figlio di cui vuoi i compiti e premi Invio. |
+| **"Le credenziali salvate non funzionano più"** | Hai cambiato la password su ClasseViva (o è scaduta). Lancia `AVVIA-WINDOWS.bat --cambia-password` e scrivi quella nuova. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **La finestra nera si chiude subito** | Fai clic con il tasto destro su **AVVIA-WINDOWS** e scegli **Apri**. Se ancora non va, riavvia il computer e riprova. |
 | **L'orario è sbagliato** | Può succedere: il programma lo ricostruisce dal registro e a volte sbaglia, soprattutto quando un docente insegna più materie. Fa fede l'orario ufficiale della scuola. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |

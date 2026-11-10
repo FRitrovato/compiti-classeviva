@@ -95,13 +95,26 @@ Sul Mac si usa il **Terminale**, una finestra dove si scrivono comandi. Sembra d
     Prima dell'elenco può comparire la scritta "primo ingresso non riuscito, provo il secondo...": è normale, non è un errore.
 
 7. Dopo qualche secondo si apre **Safari** con il foglio:
-    - in alto, i **compiti in arrivo**, giorno per giorno;
-    - in basso, l'**orario della settimana**;
+    - ⚠️ le **verifiche e interrogazioni** dei prossimi 14 giorni, con il conto alla rovescia;
+    - 📖 **in classe**: le lezioni dell'ultimo giorno di scuola, ora per ora, con l'**argomento** scritto dal docente, e i compiti dati quel giorno;
+    - 📚 i **compiti in arrivo**, giorno per giorno. 📌 = scritto in Agenda, 🆕 = dato oggi o il giorno prima;
+    - 🗓️ **il giorno prima**: lezioni e compiti del giorno di scuola precedente (utile se tuo figlio era assente);
+    - in fondo l'**orario della settimana** e la **legenda** dei simboli;
     - il bottone blu **Stampa / salva PDF** per stamparlo.
 
 8. Il Terminale lo puoi chiudere (**Cmd + Q**).
 
-**Le credenziali non vengono salvate:** le scrivi ogni volta. È più sicuro così.
+**Vuoi che il computer si ricordi codice e password?** Dopo il primo accesso il programma te lo chiede: rispondi **s** e premi Invio. Dalla volta dopo non li chiede più.
+Non finiscono in un file: li custodisce il **Portachiavi del Mac**, lo stesso posto dove il computer tiene le altre password. Se rispondi solo Invio, non viene salvato niente.
+Se il Mac mostra una finestra che chiede il permesso di usare il **Portachiavi**, scrivi la password del Mac e clicca **Consenti sempre**.
+
+**Hai cambiato la password di ClasseViva?** (Succede: ogni tanto ClasseViva la fa cambiare.) Il programma se ne accorge e ti dice di usare `--cambia-password`. Nel Terminale scrivi:
+
+```
+bash ~/Desktop/compiti-classeviva-main/compiti.sh --cambia-password
+```
+
+Ti chiede di nuovo codice e password e li aggiorna. Per **cancellarli** dal computer, invece di `--cambia-password` usa `--dimentica`.
 
 ---
 
@@ -143,6 +156,7 @@ Nella cartella **compiti-classeviva-main** sulla Scrivania trovi tre file nuovi 
 | **"No such file or directory"** | La cartella non è sulla Scrivania, oppure ha un altro nome. Controlla che sulla Scrivania ci sia proprio **compiti-classeviva-main**. |
 | **"Manca Python 3"**, oppure compare la finestra degli **strumenti per sviluppatori** | Torna alla PARTE 1 e segui il caso B o C. Poi riprova. |
 | **Compare un elenco di nomi con dei numeri** | Hai più figli sullo stesso account: scrivi il numero del figlio di cui vuoi i compiti e premi Invio. |
+| **"Le credenziali salvate non funzionano più"** | Hai cambiato la password su ClasseViva (o è scaduta). Lancia `bash ~/Desktop/compiti-classeviva-main/compiti.sh --cambia-password` e scrivi quella nuova. |
 | **"Accesso non riuscito"** | Codice o password sbagliati. Prova a entrare dal sito di ClasseViva con gli stessi dati: se lì funziona, riprova qui facendo attenzione a maiuscole e minuscole. |
 | **Errore con la parola "certificate"** | Apri **Applicazioni** > cartella **Python 3...** > doppio clic su **Install Certificates.command**. Poi riprova. |
 | **L'orario è sbagliato** | Può succedere: il programma lo ricostruisce dal registro e a volte sbaglia, soprattutto quando un docente insegna più materie. Fa fede l'orario ufficiale della scuola. Chiedi in classe se qualcuno ha già il file **orario.csv** giusto e mettilo nella cartella del programma. |

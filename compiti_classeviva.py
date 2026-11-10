@@ -7,7 +7,8 @@ Questo programma li prende dal registro e prepara un foglio pulito,
 da leggere sul telefono o stampare in A4.
 
 Cosa fa:
-  1. chiede le credenziali ClasseViva del genitore (NON le salva da nessuna parte);
+  1. chiede le credenziali ClasseViva del genitore. Di base NON le salva; se vuoi,
+     le fa ricordare al portachiavi del sistema (mai in un file);
      se sull'account ci sono piu' figli, chiede di quale;
      la classe (tipo "3B") la legge da solo dal registro: nessuno la deve scrivere;
   2. scarica i compiti in arrivo (Agenda + Didattica) e li raggruppa per giorno;
@@ -24,11 +25,13 @@ Uso:
     python compiti_classeviva.py --domani        # solo il prossimo giorno di scuola
     python compiti_classeviva.py --data 2026-10-16
     python compiti_classeviva.py --dal 2026-10-19 --al 2026-10-23
+    python compiti_classeviva.py --cambia-password   # nuova password (e la salva al posto della vecchia)
+    python compiti_classeviva.py --dimentica         # cancella codice e password salvati
 
 Licenza GPL-3.0. Ciao / Francesco Ritrovato
 
-PS: le credenziali restano tra te e Spaggiari. Il programma non scrive niente
-    su disco tranne i fogli che produce, e non manda niente a nessun altro.
+PS: le credenziali restano tra te, Spaggiari e (se lo chiedi tu) il portachiavi del tuo
+    computer. Il programma non le scrive in nessun file e non manda niente a nessun altro.
 """
 
 import argparse
@@ -107,6 +110,62 @@ def scegli_figlio(scelte):
         if r.isdigit() and 1 <= int(r) <= len(scelte):
             return scelte[int(r) - 1]
         print("  Numero non valido, riprova.")
+
+
+# ================================================================ PORTACHIAVI
+# Su richiesta, codice e password si possono far ricordare al computer.
+# NON in un file: nel portachiavi del sistema, lo stesso dove il browser tiene le sue password.
+#   Mac: Portachiavi (Keychain).  Windows: Gestione credenziali.  Linux: Secret Service.
+# Cifrate dal sistema e legate al tuo utente. Chi non lo vuole, non risponde "s" e non cambia niente.
+SERVIZIO = "compiti-classeviva"
+
+
+def _portachiavi():
+    """Il modulo keyring, se c'e' e se il sistema ha davvero un portachiavi. Altrimenti None."""
+    try:
+        import keyring
+        from keyring.backends import fail
+        if isinstance(keyring.get_keyring(), fail.Keyring):
+            return None   # es. un Linux senza portachiavi: meglio non fingere
+        return keyring
+    except Exception:
+        return None
+
+
+def credenziali_salvate():
+    """(utente, password) dal portachiavi, oppure (None, None)."""
+    k = _portachiavi()
+    if not k:
+        return None, None
+    try:
+        utente = k.get_password(SERVIZIO, "utente")
+        return (utente, k.get_password(SERVIZIO, utente)) if utente else (None, None)
+    except Exception:
+        return None, None
+
+
+def salva_credenziali(utente, password):
+    k = _portachiavi()
+    if not k:
+        print("[i] su questo computer non c'e' un portachiavi utilizzabile: credenziali NON salvate")
+        return False
+    k.set_password(SERVIZIO, "utente", utente)
+    k.set_password(SERVIZIO, utente, password)
+    return True
+
+
+def dimentica_credenziali():
+    """Toglie codice e password dal portachiavi. Se non c'erano, nessun dramma."""
+    k = _portachiavi()
+    utente, _ = credenziali_salvate()
+    if not (k and utente):
+        return False
+    for chiave in (utente, "utente"):
+        try:
+            k.delete_password(SERVIZIO, chiave)
+        except Exception:
+            pass
+    return True
 
 
 # ================================================================ ACCESSO
@@ -327,10 +386,25 @@ def giorni_scuola(dal, al, sabato):
     return out
 
 
-def _riga(materia, docente, testo, tipo):
+def _riga(materia, docente, testo, tipo, assegnato="", fonte="didattica"):
     # Una voce del foglio, sempre nella stessa forma. Le maiuscole del registro le addomestichiamo.
+    # "assegnato": il giorno in cui il compito e' stato DATO (AAAA-MM-GG), se il registro lo dice.
+    # Serve al bollino NUOVO.
+    # "fonte": "agenda" o "didattica". Sul foglio i compiti scritti SOLO in Agenda hanno lo spillo 📌:
+    # in Didattica il ragazzo li ritrova, in Agenda e' facile perderli.
     return {"tipo": tipo, "materia": (materia or "").strip().title(),
-            "docente": (docente or "").strip().title(), "testo": testo.strip()}
+            "docente": (docente or "").strip().title(), "testo": testo.strip(),
+            "assegnato": assegnato or "", "fonte": fonte}
+
+
+def data_consegna(e):
+    """Il giorno in cui una voce d'Agenda va FATTA. Non sempre e' il giorno in cui comincia."""
+    # Visto davvero il 10 novembre 2026: "Approfondimento: scrivere riassunto..." andava
+    # dal 3 al 10 novembre. Inizio = quando l'hanno dato, fine = quando va consegnato.
+    # Prima guardavamo solo l'inizio, e queste voci sparivano dal foglio.
+    inizio = (e.get("evtDatetimeBegin") or "")[:10]
+    fine = (e.get("evtDatetimeEnd") or "")[:10]
+    return fine if fine > inizio and not e.get("isFullDay") else inizio
 
 
 def materie_dei_docenti(lezioni):
@@ -361,34 +435,113 @@ def compiti_per_giorno(eventi, didattica, giorni, docenti=None):
 
     # Giro 1: l'Agenda.
     for e in eventi:
-        g = (e.get("evtDatetimeBegin") or "")[:10]
+        g = data_consegna(e)
         if g not in validi:
             continue
+        inizio = (e.get("evtDatetimeBegin") or "")[:10]
+        # Se la voce dura piu' giorni, il primo e' quello in cui e' stata data.
+        assegnato = inizio if inizio != g else ""
         testo = (e.get("notes") or "").strip()
         # Se la voce d'agenda punta a un compito in Didattica, prendiamo il testo da li'.
         # E ci segniamo che quel compito l'abbiamo gia' usato.
         hw = per_id.get(e.get("homeworkId"))
+        fonte = "agenda"   # finche' non scopriamo che rimanda a un compito di Didattica
         if hw and (hw.get("homeworkDesc") or "").strip():
+            fonte = "didattica"
             testo = hw["homeworkDesc"]
+            assegnato = hw.get("assignmentDate") or assegnato
             usati.add(hw.get("evtId"))
         if testo.strip():
             tipo = "Compito" if e.get("evtCode") == "AGHW" else "Annotazione"
             # La materia: quella del registro; se manca (le annotazioni), quella del docente che l'ha scritta.
-            materia = e.get("subjectDesc") or (docenti or {}).get((e.get("authorName") or "").strip())
-            per_giorno[g].append(_riga(materia, e.get("authorName"), testo, tipo))
+            # Se rimanda a Didattica, la materia la sa di sicuro Didattica.
+            materia = (e.get("subjectDesc") or (hw or {}).get("subjectDesc")
+                       or (docenti or {}).get((e.get("authorName") or "").strip()))
+            per_giorno[g].append(_riga(materia, e.get("authorName"), testo, tipo, assegnato, fonte))
 
     # Giro 2: i compiti di Didattica che l'Agenda non nominava. Data che conta: la SCADENZA.
     for h in didattica:
         g = h.get("expiryDate")
         if g in validi and h.get("evtId") not in usati and (h.get("homeworkDesc") or "").strip():
             per_giorno[g].append(_riga(h.get("subjectDesc"), h.get("teacherName"),
-                                       h["homeworkDesc"], "Compito"))
+                                       h["homeworkDesc"], "Compito", h.get("assignmentDate")))
 
     # In ordine di materia. Le voci senza materia (gli avvisi) in fondo.
     for righe in per_giorno.values():
         righe.sort(key=lambda r: (r["materia"] or "zzz", r["tipo"]))
     return per_giorno
 
+
+# ---------------------------------------------------------------- IL DIARIO DI CLASSE
+# Non solo "cosa c'e' da fare", ma anche "cosa hanno fatto". Il registro lo sa:
+# ogni lezione firmata ha l'ARGOMENTO, e ogni compito di Didattica la data in cui e' stato DATO.
+
+# Parole che, in un compito o in un avviso, vogliono dire "verifica in arrivo".
+VERIFICA = re.compile(r"verific|interrogazion|compito in classe|prova (scritta|orale|pratica)|"
+                      r"\btest\b|devoir en classe|contr[oô]le", re.IGNORECASE)
+
+# PRIVACY. I fogli girano nei gruppi dei genitori.
+# Certi docenti scrivono "Interrogati: Rossi, Bianchi" o "Assenti: ...". I nomi NON escono:
+# tagliamo dal "due punti" fino al punto (o a fine riga).
+NOMI_IN_ELENCO = re.compile(r"\b(interrogat[ioe]|assent[ie]|present[ie]|giustificat[ie])\s*:[^.;\n]*",
+                            re.IGNORECASE)
+
+
+def pulisci(testo):
+    """Spazi in ordine e nessun elenco di alunni."""
+    return " ".join(NOMI_IN_ELENCO.sub(r"\1: (omesso)", testo or "").split())
+
+
+def giorni_con_lezioni(lezioni, fino_a):
+    """I giorni (dal piu' recente) in cui ci sono state lezioni, fino a 'fino_a' compreso."""
+    # "Oggi" per la pagina e' l'ultimo giorno DI SCUOLA: di domenica e' il venerdi'.
+    # E "il giorno prima" e' quello di scuola prima ancora, non il giorno di calendario.
+    return sorted({l.get("evtDate") for l in lezioni if l.get("evtDate") and l["evtDate"] <= str(fino_a)},
+                  reverse=True)
+
+
+def diario_del_giorno(giorno, lezioni, agenda, didattica, docenti):
+    """Cosa e' successo in classe un certo giorno: lezioni con argomento, note in Agenda, compiti dati."""
+    giorno = str(giorno)
+    ore = []
+    for l in sorted((l for l in lezioni if l.get("evtDate") == giorno), key=lambda l: int(l.get("evtHPos") or 0)):
+        materia = (l.get("subjectDesc") or "").strip()
+        if not materia or "sostegno" in materia.lower():
+            continue   # il sostegno e' di UN alunno, non della classe: non lo raccontiamo
+        tipo = (l.get("lessonType") or "").strip()
+        ore.append({"ora": int(l.get("evtHPos") or 0), "materia": materia.title(),
+                    # "Lezione" lo diamo per scontato; "Interrogazione", "Prova pratica" invece li diciamo.
+                    "tipo": "" if tipo.lower() in ("", "lezione") else tipo,
+                    "argomento": pulisci(l.get("lessonArg"))})
+    # Certi docenti la lezione la raccontano in Agenda: le note di QUEL giorno, di un giorno solo.
+    note = []
+    for e in agenda:
+        inizio, fine = (e.get("evtDatetimeBegin") or "")[:10], (e.get("evtDatetimeEnd") or "")[:10]
+        if inizio == giorno and fine in ("", giorno) and (e.get("notes") or "").strip():
+            materia = e.get("subjectDesc") or docenti.get((e.get("authorName") or "").strip()) or ""
+            note.append({"materia": materia.title(), "testo": pulisci(e.get("notes"))})
+    # I compiti DATI quel giorno (la data di consegna e' un'altra storia).
+    dati = [{"materia": (h.get("subjectDesc") or "").title(), "testo": pulisci(h.get("homeworkDesc")),
+             "per": h.get("expiryDate") or ""}
+            for h in didattica if h.get("assignmentDate") == giorno and (h.get("homeworkDesc") or "").strip()]
+    dati.sort(key=lambda d: (d["per"], d["materia"]))
+    return {"giorno": datetime.strptime(giorno, "%Y-%m-%d").date(), "ore": ore, "note": note, "dati": dati}
+
+
+def verifiche_in_arrivo(per_giorno, oggi, entro=14):
+    """Verifiche e interrogazioni nei prossimi 'entro' giorni, la piu' vicina per prima."""
+    trovate = []
+    for g, righe in per_giorno.items():
+        d = datetime.strptime(g, "%Y-%m-%d").date()
+        if 0 < (d - oggi).days <= entro:
+            trovate += [(d, r) for r in righe if VERIFICA.search(r["testo"])]
+    return sorted(trovate, key=lambda x: (x[0], x[1]["materia"]))
+
+
+def tra_quanto(d, oggi):
+    """'domani', 'tra 3 giorni'. Il conto alla rovescia che i ragazzi capiscono al volo."""
+    n = (d - oggi).days
+    return "domani" if n == 1 else f"tra {n} giorni"
 
 
 # ================================================================ OUTPUT
@@ -469,12 +622,18 @@ AVVISO_ORARIO = ("Orario ricostruito in automatico dalle lezioni firmate sul reg
                  "PUÒ CONTENERE ERRORI. Fa fede l'orario ufficiale comunicato dalla scuola.")
 
 
-def testo_whatsapp(giorni, orario, per_giorno, ricostruito=False):
+def testo_whatsapp(giorni, orario, per_giorno, ricostruito=False, diario=None):
     """Testo pronto da incollare su WhatsApp: niente nomi, solo materie e compiti."""
     # Va nel gruppo dei genitori, quindi PRIVACY prima di tutto:
     # niente scuola, niente classe, niente studente, niente docenti.
     # Gli asterischi sono il grassetto di WhatsApp, i trattini bassi il corsivo.
     righe = [f"📚 *{titolo(giorni).upper()}*"]
+    diario = diario or {}
+    nuovi = {str(x["giorno"]) for x in (diario.get("oggi"), diario.get("ieri")) if x}
+    if diario.get("verifiche"):
+        righe += ["", "⚠️ *VERIFICHE IN ARRIVO*"]
+        righe += [f"• {GIORNI[d.weekday()].lower()} {d:%d/%m} ({tra_quanto(d, date.today())}): "
+                  f"*{r['materia'] or 'Avviso'}*" for d, r in diario["verifiche"]]
     for g in giorni:
         righe.append("")
         righe.append(f"*{GIORNI[g.weekday()].upper()} {g:%d/%m}*")
@@ -486,14 +645,16 @@ def testo_whatsapp(giorni, orario, per_giorno, ricostruito=False):
             for c in compiti:
                 materia = c["materia"] or "Avviso"
                 # Tutto su una riga: sul telefono si legge meglio.
-                testo = " ".join(c["testo"].split())
-                righe.append(f"▪️ *{materia}*: {testo}")
+                testo = pulisci(c["testo"])
+                segni = ("📌" if c.get("fonte") == "agenda" else "") + ("🆕" if c.get("assegnato") in nuovi else "")
+                righe.append(f"▪️ *{materia}*{' ' + segni if segni else ''}: {testo}")
         else:
             righe.append("▪️ Nessun compito registrato")
     # La data di aggiornamento SEMPRE in fondo: chi legge capisce subito se e' roba vecchia.
     if ricostruito and orario:
         righe += ["", f"_\u26a0\ufe0f {AVVISO_ORARIO}_"]
-    righe += ["", f"_Aggiornato il {datetime.now():%d/%m alle %H:%M} dal registro elettronico._",
+    righe += ["", "_📌 = scritto in Agenda · 🆕 = dato oggi o il giorno di scuola prima_",
+              f"_Aggiornato il {datetime.now():%d/%m alle %H:%M} dal registro elettronico._",
               "_Per i compiti fa sempre fede il diario scritto a mano dall'alunno._"]
     return "\n".join(righe)
 
@@ -529,7 +690,33 @@ def sigla(materia):
     return corto.replace(" / ", "/")
 
 
-def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False):
+def _blocco_diario(e, titolo, d):
+    """Un giorno di scuola raccontato: le ore con l'argomento, le note in Agenda, i compiti dati."""
+    out = [f"<h2>{titolo}</h2>"]
+    if d["ore"]:
+        out.append("<ul>")
+        for o in d["ore"]:
+            tipo = f" <em>({e(o['tipo'])})</em>" if o["tipo"] else ""
+            arg = f": {e(o['argomento'])}" if o["argomento"] else ": <em>argomento non indicato</em>"
+            out.append(f"<li>{o['ora']}ª <strong>{e(o['materia'])}</strong>{tipo}{arg}</li>")
+        out.append("</ul>")
+    else:
+        out.append("<p>Nessuna lezione firmata sul registro (per ora).</p>")
+    if d["note"]:
+        out.append("<p><strong>Scritto in Agenda:</strong></p><ul>")
+        out += [f"<li><strong>{e(n['materia'] or 'Avviso')}</strong>: {e(n['testo'])}</li>" for n in d["note"]]
+        out.append("</ul>")
+    if d["dati"]:
+        out.append("<p><strong>Compiti dati:</strong></p><ul>")
+        for c in d["dati"]:
+            per = datetime.strptime(c["per"], "%Y-%m-%d").date() if c["per"] else None
+            quando = f" <em>(per {GIORNI[per.weekday()].lower()} {per:%d/%m})</em>" if per else ""
+            out.append(f"<li><strong>{e(c['materia'])}</strong>{quando}: {e(c['testo'])}</li>")
+        out.append("</ul>")
+    return out
+
+
+def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diario=None):
     """Il corpo della pagina: compiti in arrivo + orario della settimana."""
     # Pensata per essere condivisa (gruppo classe, stampa), quindi PRIVACY prima di tutto:
     # al massimo il nome della classe. Niente scuola, niente studenti, niente docenti.
@@ -537,8 +724,28 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False):
     # Il nome della classe sta gia' nel titolo della pagina: qui solo la data, ben visibile.
     out = [f"<p><strong>Aggiornato il {datetime.now():%d/%m/%Y alle %H:%M}</strong></p>"]
 
-    # Prima i compiti: e' quello che il genitore cerca aprendo la pagina dal telefono.
-    out.append("<h2>Compiti in arrivo</h2>")
+    # diario = {"oggi": ..., "ieri": ..., "verifiche": [...]}: c'e' solo se il programma l'ha preparato.
+    diario = diario or {}
+    oggi_d, ieri_d = diario.get("oggi"), diario.get("ieri")
+    nuovi = {str(x["giorno"]) for x in (oggi_d, ieri_d) if x}
+
+    # 1. Le verifiche in arrivo, in cima: sono quelle che non si possono dimenticare.
+    if diario.get("verifiche"):
+        out.append("<h2>⚠️ Verifiche e interrogazioni in arrivo</h2><ul>")
+        for d, r in diario["verifiche"]:
+            quando = f"{GIORNI[d.weekday()].lower()} {d:%d/%m}, {tra_quanto(d, date.today())}"
+            out.append(f"<li><strong>{e(quando)}</strong> · <strong>{e(r['materia'] or 'Avviso')}</strong>: "
+                       f"{e(pulisci(r['testo']))}</li>")
+        out.append("</ul>")
+
+    # 2. Cosa hanno fatto in classe l'ultimo giorno di scuola.
+    if oggi_d:
+        g = oggi_d["giorno"]
+        etichetta = "Oggi" if g == date.today() else GIORNI[g.weekday()]
+        out += _blocco_diario(e, f"📖 {etichetta} in classe ({GIORNI[g.weekday()].lower()} {g:%d/%m})", oggi_d)
+
+    # 3. I compiti, giorno per giorno: e' quello che il genitore cerca aprendo la pagina.
+    out.append("<h2>📚 Compiti in arrivo</h2>")
     giorni_pieni = [g for g in giorni if per_giorno.get(str(g))]
     if not giorni_pieni:
         out.append("<p>Nessun compito registrato per i prossimi giorni.</p>")
@@ -547,9 +754,17 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False):
         out.append(f"<h3><strong>{GIORNI[g.weekday()].upper()} {g:%d/%m}</strong></h3><ul>")
         for c in per_giorno[str(g)]:
             materia = e(c["materia"] or "Avviso")
-            testo = e(" ".join(c["testo"].split()))
-            out.append(f"<li><strong>{materia}</strong>: {testo}</li>")
+            testo = e(pulisci(c["testo"]))
+            nuovo = " 🆕" if c.get("assegnato") in nuovi else ""
+            verifica = " ⚠️" if VERIFICA.search(c["testo"]) else ""
+            agenda = " 📌" if c.get("fonte") == "agenda" else ""
+            out.append(f"<li><strong>{materia}</strong>{agenda}{nuovo}{verifica}: {testo}</li>")
         out.append("</ul>")
+
+    # 4. Il giorno di scuola prima: per chi era assente, o per chi vuole ripassare.
+    if ieri_d:
+        g = ieri_d["giorno"]
+        out += _blocco_diario(e, f"🗓️ Il giorno prima ({GIORNI[g.weekday()].lower()} {g:%d/%m})", ieri_d)
 
     # Poi l'orario della settimana, una tabella sola: righe = ore, colonne = giorni.
     if orario:
@@ -566,6 +781,25 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False):
         if ricostruito:
             out.append(f"<p><strong>\u26a0\ufe0f {e(AVVISO_ORARIO)}</strong></p>")
 
+    # La LEGENDA. Chi apre la pagina non ha letto il programma: i simboli vanno spiegati qui.
+    out.append("<h2>Legenda</h2><ul>"
+               "<li>⚠️ <strong>Verifiche e interrogazioni in arrivo</strong>: quelle dei prossimi 14 giorni, "
+               "trovate cercando parole come verifica, interrogazione, compito in classe. "
+               "Nell'elenco dei compiti il ⚠️ segna le stesse voci.</li>"
+               "<li>📖 <strong>In classe</strong>: le lezioni dell'ultimo giorno di scuola, ora per ora, "
+               "con l'argomento che il docente ha scritto sul registro. Sotto, le note scritte in Agenda "
+               "quel giorno e i compiti dati quel giorno, con la data di consegna.</li>"
+               "<li>📚 <strong>Compiti in arrivo</strong>: tutti i compiti già assegnati, "
+               "divisi per giorno di CONSEGNA.</li>"
+               "<li>📌 Compito scritto dal docente in <strong>Agenda</strong> invece che nella sezione "
+               "Didattica del registro: nell'app è più facile non vederlo.</li>"
+               "<li>🆕 Compito <strong>nuovo</strong>: dato oggi o il giorno di scuola prima.</li>"
+               "<li>🗓️ <strong>Il giorno prima</strong>: lezioni e compiti del giorno di scuola precedente. "
+               "Utile a chi era assente.</li>"
+               "<li><em>(omesso)</em>: dove il docente aveva scritto nomi di alunni "
+               "(per esempio «Interrogati: …»). Qui i nomi non si pubblicano.</li>"
+               "<li>🕒 <strong>Orario settimanale</strong>: in fondo; se è ricostruito dal registro può contenere errori.</li>"
+               "</ul>")
     out.append("<p><em>Dati presi dal registro elettronico. Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p>")
     return "\n".join(out)
 
@@ -603,7 +837,7 @@ p{margin:.4rem 0}em{color:#666;font-size:.85rem}
 """
 
 
-def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False):
+def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False, diario=None):
     """La pagina HTML finale: titolo, bottone Stampa, compiti in arrivo, orario della settimana."""
     titolo_pagina = f"Classe {classe}" if classe else "Compiti e orario"
     return (f"<!doctype html><html lang='it'><head><meta charset='utf-8'>"
@@ -611,7 +845,7 @@ def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False):
             f"<title>{html.escape(titolo_pagina)}</title><style>{STILE_PAGINA}</style></head><body>"
             f"<h1>{html.escape(titolo_pagina)}</h1>"
             f"<button class='stampa' onclick='window.print()'>Stampa / salva PDF</button>"
-            + html_pagina_web(classe, orario, giorni, per_giorno, ricostruito) + "</body></html>")
+            + html_pagina_web(classe, orario, giorni, per_giorno, ricostruito, diario) + "</body></html>")
 
 
 # ================================================================ MAIN
@@ -627,9 +861,17 @@ def main():
     ap.add_argument("--sabato", action="store_true", help="la scuola fa lezione anche il sabato")
     ap.add_argument("--uscita", default=".", help="cartella dove salvare i file (default: quella corrente)")
     ap.add_argument("--no-open", action="store_true", help="non aprire il foglio nel browser alla fine")
+    ap.add_argument("--cambia-password", action="store_true",
+                    help="richiede codice e password e aggiorna quelli salvati (es. dopo averla cambiata su ClasseViva)")
+    ap.add_argument("--dimentica", action="store_true",
+                    help="cancella codice e password salvati su questo computer, e basta")
     ap.add_argument("--debug", action="store_true",
                     help="salva le risposte grezze del server (contengono dati personali: NON condividerle)")
     a = ap.parse_args()
+    if a.dimentica:
+        print("[ok] credenziali cancellate da questo computer" if dimentica_credenziali()
+              else "[i] su questo computer non c'erano credenziali salvate")
+        return
 
     # 2. Quali giorni. Le date si controllano PRIMA del login.
     oggi = date.today()
@@ -657,20 +899,38 @@ def main():
     if not giorni:
         sys.exit("Nel periodo indicato non ci sono giorni di scuola.")
 
-    # 3. Le credenziali. Chieste a voce, MAI salvate. La password non compare mentre la scrivi.
-    print("Accesso a ClasseViva (le credenziali NON vengono salvate)")
-    utente = input("  Codice utente o email del genitore: ").strip()
-    password = getpass.getpass("  Password (non si vede mentre scrivi): ")
+    # 3. Le credenziali. Di base si chiedono ogni volta e NON si salvano.
+    #    Se un giorno hai detto "s", stanno nel portachiavi del sistema e non le richiediamo.
+    #    La password non compare mai sullo schermo, ne' mentre la scrivi ne' dopo.
+    utente, password = (None, None) if a.cambia_password else credenziali_salvate()
+    dal_portachiavi = bool(utente and password)
+    if dal_portachiavi:
+        print("[i] uso codice e password salvati su questo computer (per cambiarli: --cambia-password)")
+    else:
+        print("Accesso a ClasseViva")
+        utente = input("  Codice utente o email del genitore: ").strip()
+        password = getpass.getpass("  Password (non si vede mentre scrivi): ")
     cv = ClasseViva(utente, password, None, a.debug, "genitori")
     try:
         cv.accedi()
-    except SystemExit:
-        raise
-    except Exception as err:
+    except (SystemExit, Exception) as err:
+        if dal_portachiavi:
+            # Il caso tipico: la password e' stata cambiata (o e' scaduta) su ClasseViva.
+            print("[!] Le credenziali salvate non funzionano piu'. Rilancia con:  --cambia-password")
+        if isinstance(err, SystemExit):
+            raise
         sys.exit(f"[!] Accesso non riuscito: {err}")
-    finally:
-        password = None  # non la teniamo in giro piu' del necessario
     print("[ok] accesso eseguito")
+    # Solo DOPO un accesso riuscito si salva: una password sbagliata non la vogliamo ricordare.
+    if a.cambia_password:
+        if salva_credenziali(utente, password):
+            print("[ok] codice e password aggiornati su questo computer")
+    elif not dal_portachiavi and _portachiavi():
+        r = input("  Vuoi che questo computer si ricordi codice e password? "
+                  "Restano nel portachiavi del sistema. [s/N] ").strip().lower()
+        if r in ("s", "si", "sì") and salva_credenziali(utente, password):
+            print("[ok] salvati. Per toglierli:  --dimentica")
+    password = None  # non la teniamo in giro piu' del necessario
     # La classe la dice il registro stesso: nessuno deve scriverla.
     # Le lezioni firmate dell'ultimo mese: le chiediamo UNA volta e servono a tre cose.
     # La classe (se il login non l'ha detta), chi insegna cosa (per le annotazioni) e l'orario.
@@ -685,9 +945,17 @@ def main():
         classe = classe_da_lezioni(lezioni)
 
     # 4. I compiti: Agenda + Didattica, raggruppati per giorno di consegna.
+    # L'Agenda la chiediamo da 3 settimane fa: certe voci cominciano nel passato e
+    # scadono nei prossimi giorni (vedi data_consegna), e servono le note di oggi e di ieri.
+    docenti = materie_dei_docenti(lezioni)
+    agenda = cv.agenda(oggi - timedelta(weeks=3), max(giorni[-1], oggi))
     didattica = cv.compiti_didattica()
-    per_giorno = compiti_per_giorno(cv.agenda(giorni[0], giorni[-1]), didattica, giorni,
-                                    materie_dei_docenti(lezioni))
+    per_giorno = compiti_per_giorno(agenda, didattica, giorni, docenti)
+
+    # Il diario: l'ultimo giorno di scuola (oggi, o venerdi' se e' domenica) e quello prima.
+    diario = {"verifiche": verifiche_in_arrivo(per_giorno, oggi)}
+    for chiave, g in zip(("oggi", "ieri"), giorni_con_lezioni(lezioni, oggi)[:2]):
+        diario[chiave] = diario_del_giorno(g, lezioni, agenda, didattica, docenti)
     if tutti:
         giorni = [g for g in giorni if per_giorno.get(str(g))] or giorni[:1]
 
@@ -715,14 +983,15 @@ def main():
     base = uscita / nome
     pagina = base.with_suffix(".html")
     ricostruito = not csv.exists()
-    pagina.write_text(pagina_completa(classe, orario, giorni, per_giorno, ricostruito), encoding="utf-8")
+    pagina.write_text(pagina_completa(classe, orario, giorni, per_giorno, ricostruito, diario), encoding="utf-8")
     print(f"[ok] pagina  -> {pagina}")
     if genera_pdf(base.with_suffix(".pdf"), giorni, orario, origine, per_giorno,
                   f"Classe {classe}" if classe else ""):
         print(f"[ok] PDF     -> {base.with_suffix('.pdf')}")
     else:
         print("[i] per avere anche il PDF:  pip install reportlab  (intanto stampa la pagina)")
-    base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno, ricostruito), encoding="utf-8")
+    base.with_suffix(".txt").write_text(testo_whatsapp(giorni, orario, per_giorno, ricostruito, diario),
+                                        encoding="utf-8")
     print(f"[ok] testo per WhatsApp -> {base.with_suffix('.txt')}")
     if origine and not csv.exists():
         print("[i] l'orario e' ricostruito dal registro: se non torna, compila orario.csv (vedi il manuale)")

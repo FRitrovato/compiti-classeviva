@@ -24,7 +24,7 @@ if [ ! -x .venv/bin/python ]; then
   echo "[i] Prima volta: preparo l'ambiente Python (un minuto)..."
   python3 -m venv .venv
 fi
-if ! .venv/bin/python -c "import requests, reportlab" 2>/dev/null; then
+if ! .venv/bin/python -c "import requests, reportlab, keyring" 2>/dev/null; then
   echo "[i] Installo le librerie (requests, reportlab)..."
   .venv/bin/python -m pip install -q --upgrade pip
   .venv/bin/python -m pip install -q -r requirements.txt

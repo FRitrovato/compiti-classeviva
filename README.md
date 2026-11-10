@@ -13,17 +13,21 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 1. Ti chiede codice utente e password ClasseViva del **genitore**.
    Se sull'account ci sono più figli, ti chiede di quale.
 2. Scarica i compiti in arrivo (Agenda + Didattica) e li mette in ordine per giorno di consegna.
-3. Aggiunge l'orario della settimana.
-4. Prepara tre file:
+   Segna quelli **nuovi** (🆕) e quelli scritti **solo in Agenda** (📌), che nell'app si perdono facilmente.
+3. Mette in cima le **verifiche e interrogazioni** dei prossimi 14 giorni (⚠️), con il conto alla rovescia.
+4. Racconta **cosa hanno fatto in classe**: le lezioni dell'ultimo giorno di scuola e di quello prima, ora per ora, con l'argomento scritto dal docente, e i compiti dati quei giorni.
+5. Aggiunge l'orario della settimana e, in fondo, una legenda dei simboli.
+6. Prepara tre file:
    - una **pagina** da aprire nel browser, con il bottone "Stampa / salva PDF";
    - un **PDF** in A4;
    - un **testo per WhatsApp**, già formattato, senza nomi di nessuno.
 
 ## Privacy, prima di tutto
 
-1. Le credenziali NON vengono salvate. Le scrivi ogni volta, e la password non compare sullo schermo.
+1. Di base le credenziali NON vengono salvate: le scrivi ogni volta, e la password non compare sullo schermo.
+   Se vuoi, dopo il primo accesso puoi farle ricordare al computer: finiscono nel **portachiavi del sistema** (Portachiavi su Mac, Gestione credenziali su Windows), **mai in un file**. Si cambiano con `--cambia-password` e si cancellano con `--dimentica`.
 2. Il programma parla SOLO con il server di Spaggiari. Non manda niente a nessun altro, nemmeno a me.
-3. I fogli prodotti NON contengono nomi di studenti, docenti o scuola. Solo la sigla della classe (tipo "3B"), che il programma legge da solo dal registro.
+3. I fogli prodotti NON contengono nomi di studenti, docenti o scuola. Se un docente scrive sul registro "Interrogati: Rossi, Bianchi", sul foglio esce "Interrogati: (omesso)". Le ore di sostegno non compaiono. Solo la sigla della classe (tipo "3B"), che il programma legge da solo dal registro.
 4. Il codice è tutto qui, leggibile. Se non vi fidate, fatelo leggere a qualcuno di cui vi fidate. È giusto così.
 
 ## Attenzione: cosa NON è
@@ -72,6 +76,8 @@ compiti.sh --domani                solo il prossimo giorno di scuola
 compiti.sh --data 2026-10-16       un giorno preciso
 compiti.sh --dal 2026-10-19 --al 2026-10-23
 compiti.sh --sabato                se la scuola fa lezione anche il sabato
+compiti.sh --cambia-password       nuova password (sostituisce quella salvata)
+compiti.sh --dimentica             cancella codice e password salvati sul computer
 ```
 
 Su Windows le opzioni si usano dal Prompt dei comandi: `AVVIA-WINDOWS.bat --domani`.

@@ -21,7 +21,7 @@ if not exist ".venv\Scripts\python.exe" (
   echo [i] Prima volta: preparo l'ambiente Python, un minuto...
   %PY% -m venv .venv
 )
-".venv\Scripts\python.exe" -c "import requests, reportlab" >nul 2>nul
+".venv\Scripts\python.exe" -c "import requests, reportlab, keyring" >nul 2>nul
 if errorlevel 1 (
   echo [i] Installo le librerie, requests e reportlab...
   ".venv\Scripts\python.exe" -m pip install -q --upgrade pip

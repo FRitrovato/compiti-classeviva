@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import compiti_classeviva as m  # noqa: E402
+m._portachiavi = lambda: None   # MAI il portachiavi vero del computer di collaudo
 
 uscita = Path(tempfile.mkdtemp())
 sys.argv = ["compiti_classeviva.py", "--no-open", "--uscita", str(uscita)]
@@ -119,3 +120,77 @@ nota = [{"evtCode": "AGNT", "notes": "Studiare pag 14", "authorName": "Prof A",
 riga = m.compiti_per_giorno(nota, [], [g1], doc)[str(g1)][0]
 assert riga["materia"] == "Seconda Lingua Comunitaria", riga
 print("COLLAUDO OK: le annotazioni dell'Agenda prendono la materia del docente.")
+
+# ---- Il portachiavi. Uno FINTO: il collaudo non deve mai toccare quello vero del computer.
+class FintoPortachiavi:
+    def __init__(self): self.d = {}
+    def get_password(self, s, k): return self.d.get((s, k))
+    def set_password(self, s, k, v): self.d[(s, k)] = v
+    def delete_password(self, s, k): self.d.pop((s, k))
+pk = FintoPortachiavi()
+m._portachiavi = lambda: pk
+accessi = []
+def accesso_registrato(self):
+    accessi.append((self.utente, self.password)); self.id, self.classe = "1", "3B"
+m.ClasseViva.accedi = accesso_registrato
+
+def lancia(*opzioni, risposte):
+    r = iter(risposte)
+    builtins.input = lambda prompt="": next(r)
+    sys.argv = ["compiti_classeviva.py", "--no-open", "--uscita", str(uscita), *opzioni]
+    m.main()
+
+# 1. Prima volta, risponde "s": codice e password finiscono nel portachiavi.
+getpass.getpass = lambda prompt="": "pw-vecchia"
+lancia(risposte=["G7654321Y", "s"])
+assert m.credenziali_salvate() == ("G7654321Y", "pw-vecchia"), pk.d
+# 2. Seconda volta: nessuna domanda, usa quelle salvate.
+getpass.getpass = lambda prompt="": (_ for _ in ()).throw(AssertionError("non doveva chiedere la password"))
+lancia(risposte=[])
+assert accessi[-1] == ("G7654321Y", "pw-vecchia")
+# 3. --cambia-password: richiede e sostituisce.
+getpass.getpass = lambda prompt="": "pw-nuova"
+lancia("--cambia-password", risposte=["G7654321Y"])
+assert m.credenziali_salvate() == ("G7654321Y", "pw-nuova"), pk.d
+# 4. --dimentica: non resta niente.
+lancia("--dimentica", risposte=[])
+assert pk.d == {} and m.credenziali_salvate() == (None, None)
+# 5. Chi risponde "no" (o Invio) non salva niente.
+getpass.getpass = lambda prompt="": "pw"
+lancia(risposte=["G1", ""])
+assert pk.d == {}
+# 6. Nessun file del programma contiene la password.
+for f in uscita.iterdir():
+    if f.is_file():
+        assert b"pw-nuova" not in f.read_bytes() and b"pw-vecchia" not in f.read_bytes(), f
+print("COLLAUDO OK: password salvata solo nel portachiavi, cambiata con --cambia-password, tolta con --dimentica.")
+
+# ---- Il diario: argomenti di oggi, compiti dati, verifiche, 📌 e voci d'Agenda su piu' giorni.
+oggi_t = date.today()
+m.ClasseViva.lezioni = lambda self, a, b: [
+    {"evtDate": str(oggi_t), "evtHPos": 1, "subjectDesc": "TECNOLOGIA", "authorName": "T",
+     "lessonType": "Prova pratica", "lessonArg": "solidi di rotazione"},
+    {"evtDate": str(oggi_t), "evtHPos": 2, "subjectDesc": "ITALIANO", "authorName": "I",
+     "lessonType": "Lezione", "lessonArg": "analisi logica. Interrogati: Rossi, Bianchi"},
+    {"evtDate": str(oggi_t), "evtHPos": 3, "subjectDesc": "SOSTEGNO", "authorName": "S", "lessonArg": "segreto"}]
+m.ClasseViva.agenda = lambda self, a, b=None: [
+    {"evtCode": "AGNT", "notes": "Riassunto lungo", "authorName": "I", "isFullDay": False,
+     "evtDatetimeBegin": f"{oggi_t - timedelta(days=7)}T08:00", "evtDatetimeEnd": f"{g1}T09:00"},
+    {"evtCode": "AGNT", "notes": "VERIFICA SCRITTA DI TECNOLOGIA", "authorName": "T", "isFullDay": True,
+     "evtDatetimeBegin": f"{g2}T00:00", "evtDatetimeEnd": f"{g2}T23:59"}]
+m.ClasseViva.compiti_didattica = lambda self: [
+    {"evtId": 9, "homeworkDesc": "es. pag 10", "expiryDate": str(g1), "assignmentDate": str(oggi_t),
+     "subjectDesc": "MATEMATICA"}]
+for f in uscita.glob("compiti_*"):
+    f.unlink()
+getpass.getpass = lambda prompt="": "pw"
+lancia(risposte=["G1", ""])
+pag = next(uscita.glob("compiti_*.html")).read_text(encoding="utf-8")
+txt = next(uscita.glob("compiti_*.txt")).read_text(encoding="utf-8")
+for atteso in ("solidi di rotazione", "Prova pratica", "Verifiche e interrogazioni in arrivo",
+               "Riassunto lungo", "📌", "🆕", "Legenda", "Interrogati: (omesso)"):
+    assert atteso in pag, f"nella pagina manca: {atteso}"
+for vietato in ("Rossi", "Bianchi", "segreto", "Sostegno"):
+    assert vietato not in pag and vietato not in txt, f"non doveva comparire: {vietato}"
+assert "VERIFICHE IN ARRIVO" in txt and "📌" in txt, txt
+print("COLLAUDO OK: diario di classe, verifiche, segni e privacy dei nomi.")
