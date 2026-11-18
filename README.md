@@ -24,7 +24,7 @@ Ciao, sono un genitore come voi. L'ho fatto per i miei figli e lo condivido. Gra
 5. Racconta anche **il giorno prima** 🗓️: lezioni e compiti. Per chi era a casa con la febbre (o «con la febbre»).
 6. In fondo, una **legenda**: ogni simbolo spiegato, così nessuno deve chiedere niente a nessuno.
 7. Prepara tre file:
-   - una **pagina** da aprire nel browser, con il bottone "Stampa / salva PDF";
+   - una **pagina** da aprire nel browser, con i bottoni in cima. Un interruttore **🖨️ Stampa / 💬 WhatsApp**, e un bottone per ogni parte: solo le verifiche, solo i compiti (che stanno in un foglio A4), solo cosa hanno fatto in classe, tutto con o senza legenda. Prima di stampare o mandare vedi l'**anteprima**: niente sprechi di carta, niente messaggi sbagliati nel gruppo;
    - un **PDF** in A4;
    - un **testo per WhatsApp**, già formattato, senza nomi di nessuno.
 

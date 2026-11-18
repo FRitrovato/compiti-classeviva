@@ -77,7 +77,7 @@ Fatto. Python non lo vedrai mai più: lavora dietro le quinte.
     - 📚 i **compiti in arrivo**, giorno per giorno. 📌 = scritto in Agenda, 🆕 = dato oggi o il giorno prima;
     - 🗓️ **il giorno prima**: lezioni e compiti del giorno di scuola precedente (utile se tuo figlio era assente);
     - in fondo la **legenda**: ogni simbolo spiegato;
-    - il bottone blu **Stampa / salva PDF** per stamparlo.
+    - in cima, i **bottoni**: scegli **🖨️ Stampa** o **💬 WhatsApp**, poi cosa (solo le verifiche, solo i compiti, tutto...). Prima vedi l'**anteprima**, poi decidi: **Stampa adesso**, **Manda su WhatsApp** oppure **Indietro**.
 
 7. Nella finestra nera premi un tasto qualsiasi per chiuderla.
 

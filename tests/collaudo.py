@@ -191,6 +191,10 @@ for atteso in ("solidi di rotazione", "Prova pratica", "Verifiche e interrogazio
                "Riassunto lungo", "📌", "🆕", "Legenda", "Interrogati: (omesso)"):
     assert atteso in pag, f"nella pagina manca: {atteso}"
 assert "Orario settimanale" not in pag and "🕒" not in txt, "senza --orario l'orario NON deve esserci"
+# I bottoni: interruttore Stampa/WhatsApp, un bottone per sezione, anteprima. E ogni sezione ha il suo nome.
+for atteso in ('id="m-wa"', "data-sez=\"compiti\"", 'id="barra"', 'id="wa-testo"', "function testoWhatsApp",
+               'class="sez sez-compiti"', 'class="sez sez-verifiche"', 'class="sez sez-oggi"', 'class="sez sez-legenda"'):
+    assert atteso in pag, f"nella pagina manca: {atteso}"
 for vietato in ("Rossi", "Bianchi", "segreto", "Sostegno"):
     assert vietato not in pag and vietato not in txt, f"non doveva comparire: {vietato}"
 assert "VERIFICHE IN ARRIVO" in txt and "📌" in txt, txt

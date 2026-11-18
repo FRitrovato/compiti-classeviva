@@ -734,7 +734,9 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
     # al massimo il nome della classe. Niente scuola, niente studenti, niente docenti.
     e = html.escape
     # Il nome della classe sta gia' nel titolo della pagina: qui solo la data, ben visibile.
-    out = [f"<p><strong>Aggiornato il {datetime.now():%d/%m/%Y alle %H:%M}</strong></p>"]
+    # Ogni parte sta in un <div class="sez sez-..."> con il suo nome: i bottoni in cima
+    # ("stampa solo i compiti", "manda su WhatsApp le verifiche"...) lavorano su questi nomi.
+    out = [f'<div class="sez sez-testata"><p><strong>Aggiornato il {datetime.now():%d/%m/%Y alle %H:%M}</strong></p></div>']
 
     # diario = {"oggi": ..., "ieri": ..., "verifiche": [...]}: c'e' solo se il programma l'ha preparato.
     diario = diario or {}
@@ -743,21 +745,23 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
 
     # 1. Le verifiche in arrivo, in cima: sono quelle che non si possono dimenticare.
     if diario.get("verifiche"):
-        out.append("<h2>⚠️ Verifiche e interrogazioni in arrivo</h2><ul>")
+        out.append('<div class="sez sez-verifiche"><h2>⚠️ Verifiche e interrogazioni in arrivo</h2><ul>')
         for d, r in diario["verifiche"]:
             quando = f"{GIORNI[d.weekday()].lower()} {d:%d/%m}, {tra_quanto(d, date.today())}"
             out.append(f"<li><strong>{e(quando)}</strong> · <strong>{e(r['materia'] or 'Avviso')}</strong>: "
                        f"{e(pulisci(r['testo']))}</li>")
-        out.append("</ul>")
+        out.append("</ul></div>")
 
     # 2. Cosa hanno fatto in classe l'ultimo giorno di scuola.
     if oggi_d:
         g = oggi_d["giorno"]
         etichetta = "Oggi" if g == date.today() else GIORNI[g.weekday()]
-        out += _blocco_diario(e, f"📖 {etichetta} in classe ({GIORNI[g.weekday()].lower()} {g:%d/%m})", oggi_d)
+        out += (['<div class="sez sez-oggi">']
+                + _blocco_diario(e, f"📖 {etichetta} in classe ({GIORNI[g.weekday()].lower()} {g:%d/%m})", oggi_d)
+                + ["</div>"])
 
     # 3. I compiti, giorno per giorno: e' quello che il genitore cerca aprendo la pagina.
-    out.append("<h2>📚 Compiti in arrivo</h2>")
+    out.append('<div class="sez sez-compiti"><h2>📚 Compiti in arrivo</h2>')
     giorni_pieni = [g for g in giorni if per_giorno.get(str(g))]
     if not giorni_pieni:
         out.append("<p>Nessun compito registrato per i prossimi giorni.</p>")
@@ -772,17 +776,20 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
             agenda = " 📌" if c.get("fonte") == "agenda" else ""
             out.append(f"<li><strong>{materia}</strong>{agenda}{nuovo}{verifica}: {testo}</li>")
         out.append("</ul>")
+    out.append("</div>")
 
     # 4. Il giorno di scuola prima: per chi era assente, o per chi vuole ripassare.
     if ieri_d:
         g = ieri_d["giorno"]
-        out += _blocco_diario(e, f"🗓️ Il giorno prima ({GIORNI[g.weekday()].lower()} {g:%d/%m})", ieri_d)
+        out += (['<div class="sez sez-ieri">']
+                + _blocco_diario(e, f"🗓️ Il giorno prima ({GIORNI[g.weekday()].lower()} {g:%d/%m})", ieri_d)
+                + ["</div>"])
 
     # Poi l'orario della settimana, una tabella sola: righe = ore, colonne = giorni.
     if orario:
         giorni_sett = [d for d in range(6) if orario.get(d)]
         ore = sorted({o for d in giorni_sett for o in orario[d]})
-        out.append("<h2>Orario settimanale</h2><table><thead><tr><th></th>")
+        out.append('<div class="sez sez-orario"><h2>Orario settimanale</h2><table><thead><tr><th></th>')
         out += [f"<th>{GIORNI[d][:3]}</th>" for d in giorni_sett]
         out.append("</tr></thead><tbody>")
         for o in ore:
@@ -792,9 +799,11 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
         out.append("</tbody></table>")
         if ricostruito:
             out.append(f"<p><strong>\u26a0\ufe0f {e(AVVISO_ORARIO)}</strong></p>")
+        out.append("</div>")
 
     # La LEGENDA. Chi apre la pagina non ha letto il programma: i simboli vanno spiegati qui.
-    out.append("<h2>Legenda</h2><ul>"
+    out.append('<div class="sez sez-legenda"><h2>Legenda</h2><ul>'
+
                "<li>⚠️ <strong>Verifiche e interrogazioni in arrivo</strong>: quelle dei prossimi 14 giorni, "
                "trovate cercando parole come verifica, interrogazione, compito in classe. "
                "Nell'elenco dei compiti il ⚠️ segna le stesse voci.</li>"
@@ -812,8 +821,9 @@ def html_pagina_web(classe, orario, giorni, per_giorno, ricostruito=False, diari
                "(per esempio «Interrogati: …»). Qui i nomi non si pubblicano.</li>"
                + ("<li>🕒 <strong>Orario settimanale</strong>: in fondo, solo se chiesto (--orario); "
                   "se è ricostruito dal registro può contenere errori.</li>" if orario else "")
-               + "</ul>")
-    out.append("<p><em>Dati presi dal registro elettronico. Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p>")
+               + "</ul></div>")
+    out.append('<div class="sez sez-nota"><p><em>Dati presi dal registro elettronico. '
+               "Per i compiti fa sempre fede il diario scritto a mano dall'alunno.</em></p></div>")
     return "\n".join(out)
 
 def leggi_data(testo):
@@ -822,7 +832,9 @@ def leggi_data(testo):
 
 
 # Grafica della pagina: leggibile sul telefono, stampabile in A4, chiara o scura secondo il telefono.
-STILE_PAGINA = """
+# Stile, bottoni e script sono GLI STESSI della pagina del blog dell'autore (plugin "pagina nuda"):
+# se ne migliori uno, migliora anche l'altro.
+STILE_PAGINA = r"""
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#1a1a1a;background:#fff;line-height:1.45}
 h1{font-size:1.5rem;margin:.2rem 0 .4rem}
 h2{font-size:1.15rem;margin:1.6rem 0 .5rem;padding-bottom:.25rem;border-bottom:2px solid #1a1a1a}
@@ -834,11 +846,21 @@ th,td{border:1px solid #ccc;padding:.35rem .25rem;text-align:center;vertical-ali
 thead th{background:#1f3864;color:#fff}tbody th{background:#f1f3f7;width:2.2rem}
 tbody tr:nth-child(even) td{background:#fafbfd}
 p{margin:.4rem 0}em{color:#666;font-size:.85rem}
-.stampa{display:inline-block;margin:.2rem 0 .6rem;padding:.55rem 1rem;font-size:1rem;border:0;border-radius:6px;background:#1f3864;color:#fff;cursor:pointer}
+.bottoni{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 .6rem}
+.bottoni-titolo{width:100%;margin:0;font-weight:600}
+.modo{display:flex;width:100%;margin-bottom:.2rem}
+.modo button{flex:1;padding:.5rem;font-size:1rem;border:2px solid #1f3864;background:#fff;color:#1f3864;cursor:pointer}
+.modo button:first-child{border-radius:6px 0 0 6px}.modo button:last-child{border-radius:0 6px 6px 0}
+.modo button.attivo{background:#1f3864;color:#fff}
+body.wa .stampa{background:#128c7e}body.wa .stampa.secondario{background:#fff;color:#128c7e;box-shadow:inset 0 0 0 2px #128c7e}
+body.wa .modo button{border-color:#128c7e;color:#128c7e}body.wa .modo button.attivo{background:#128c7e;color:#fff}
+.avviso{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#222;color:#fff;padding:.6rem 1rem;border-radius:8px;font-size:.95rem;display:none;z-index:9}
+.stampa{display:inline-block;padding:.55rem 1rem;font-size:1rem;border:0;border-radius:6px;background:#1f3864;color:#fff;cursor:pointer}
+.stampa.secondario{background:#fff;color:#1f3864;box-shadow:inset 0 0 0 2px #1f3864}
 /* STAMPA A4: da telefono o da computer, stessa pagina. Bianco e nero, niente bottone, giorni mai spezzati. */
 @page{size:A4 portrait;margin:12mm}
 @media print{
- .stampa{display:none}
+ .bottoni{display:none}
  body{max-width:none;padding:0;font-size:10.5pt;color:#000;background:#fff}
  h1{font-size:16pt}h2{font-size:12.5pt;border-color:#000;break-after:avoid}h3{font-size:11pt;color:#000;break-after:avoid}
  ul{break-inside:avoid}table{font-size:8pt;break-inside:avoid}
@@ -846,19 +868,176 @@ p{margin:.4rem 0}em{color:#666;font-size:.85rem}
  tbody th,tbody tr:nth-child(even) td{background:#fff !important}th,td{border-color:#888}
  em{color:#444}
 }
+/* ANTEPRIMA E STAMPA DI UNA SOLA SEZIONE. Ogni bottone mette il suo nome in <body data-stampa="...">
+   e accende la classe "filtra": restano l'intestazione comune (titolo, ultimo aggiornamento,
+   nota finale) e la sola sezione scelta. Vale sullo schermo (anteprima) E sulla carta. */
+body.filtra:not([data-stampa="tutto"]) .sez{display:none}
+body.filtra:not([data-stampa="tutto"]) .sez-testata,body.filtra:not([data-stampa="tutto"]) .sez-nota{display:block}
+body.filtra:not([data-stampa="tutto"]) .sez-testata em{display:none}
+/* Selettori "rinforzati" (.sez.sez-...): devono battere la regola qui sopra che nasconde tutto. */
+body.filtra[data-stampa="verifiche"] .sez.sez-verifiche,body.filtra[data-stampa="oggi"] .sez.sez-oggi,
+body.filtra[data-stampa="compiti"] .sez.sez-compiti,body.filtra[data-stampa="ieri"] .sez.sez-ieri,
+body.filtra[data-stampa="legenda"] .sez.sez-legenda{display:block}
+/* "Tutto senza legenda": tutte le sezioni tranne la legenda. */
+body.filtra[data-stampa="senza-legenda"] .sez.sez-verifiche,body.filtra[data-stampa="senza-legenda"] .sez.sez-oggi,
+body.filtra[data-stampa="senza-legenda"] .sez.sez-compiti,body.filtra[data-stampa="senza-legenda"] .sez.sez-ieri,
+body.filtra[data-stampa="senza-legenda"] .sez.sez-orario{display:block}
+/* La barra dell'anteprima e il riquadro del testo per WhatsApp. */
+.barra{display:none;position:sticky;top:0;z-index:5;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.5rem 0;margin-bottom:.4rem;background:#fff;border-bottom:2px solid #1f3864}
+.barra strong{width:100%}
+body.anteprima .barra{display:flex}body.anteprima .bottoni{display:none}
+#wa-box{display:none}body.wa-ante #wa-box{display:block}body.wa-ante .sez{display:none}
+#wa-testo{width:100%;box-sizing:border-box;min-height:60vh;font-family:inherit;font-size:.95rem;padding:.6rem;border:2px solid #128c7e;border-radius:8px;white-space:pre-wrap}
+@media print{.barra,#wa-box{display:none !important}}
+@media screen and (prefers-color-scheme:dark){.barra{background:#121212}#wa-testo{background:#1a1a1a;color:#eee}}
+@media print{
+ /* I compiti in una pagina sola: due colonne e carattere un filo piu' piccolo. */
+ body[data-stampa="compiti"]{font-size:9.5pt}
+ body[data-stampa="compiti"] .sez-compiti{column-count:2;column-gap:8mm}
+ body[data-stampa="compiti"] .sez-compiti h2{column-span:all}
+ body[data-stampa="compiti"] .sez-compiti h3{margin-top:.5rem}
+}
 @media screen and (prefers-color-scheme:dark){body{background:#121212;color:#eee}th,td{border-color:#444}tbody th{background:#222}tbody tr:nth-child(even) td{background:#1a1a1a}h2{border-color:#eee}h3{color:#ccc}em{color:#aaa}}
+"""
+
+# In cima alla pagina: interruttore Stampa / WhatsApp, un bottone per sezione, anteprima.
+CONTROLLI_PAGINA = r"""
+<div class="barra" id="barra">
+<strong id="barra-titolo"></strong>
+<button class="stampa" id="b-vai" onclick="vai()"></button>
+<button class="stampa secondario" onclick="chiudi()">✖ Indietro</button>
+</div>
+<div id="wa-box"><textarea id="wa-testo" readonly></textarea>
+<p><em>Gli *asterischi* in WhatsApp diventano <strong>grassetto</strong>, i _trattini bassi_ diventano <em>corsivo</em>.</em></p></div>
+<div class="bottoni">
+<div class="modo"><button id="m-stampa" class="attivo" onclick="scegliModo(false)">🖨️ Stampa</button><button id="m-wa" onclick="scegliModo(true)">💬 WhatsApp</button></div>
+<p class="bottoni-titolo" id="domanda">Cosa vuoi stampare?</p>
+<button class="stampa" data-sez="verifiche" onclick="azione('verifiche')">⚠️ Verifiche e interrogazioni</button>
+<button class="stampa" data-sez="oggi" onclick="azione('oggi')">📖 Oggi in classe</button>
+<button class="stampa" data-sez="compiti" onclick="azione('compiti')">📚 Compiti in arrivo</button>
+<button class="stampa" data-sez="ieri" onclick="azione('ieri')">🗓️ Il giorno prima</button>
+<button class="stampa" data-sez="legenda" onclick="azione('legenda')">ℹ️ Legenda</button>
+<button class="stampa secondario" data-s="🖨️ Tutto senza legenda" data-w="💬 Tutto senza legenda" onclick="azione('senza-legenda')">🖨️ Tutto senza legenda</button>
+<button class="stampa secondario" data-s="🖨️ Stampa tutto" data-w="💬 Manda tutto" onclick="azione('tutto')">🖨️ Stampa tutto</button>
+</div>
+"""
+
+# Il motore dei bottoni. Niente librerie, niente internet: tutto dentro la pagina.
+SCRIPT_PAGINA = r"""
+<div class="avviso" id="avviso"></div>
+<script>
+/* Un bottone = un "modo" di stampa. Il modo finisce in <body data-stampa="...">,
+   le regole @media print sopra decidono cosa va sulla carta. Finita la stampa, si torna a "tutto". */
+/* Prima si GUARDA, poi si stampa (o si manda). Il bottone apre l'anteprima,
+   la barra in alto ha "Stampa adesso" / "Manda su WhatsApp" e "Indietro". */
+var NOMI = {'verifiche':'⚠️ Verifiche e interrogazioni','oggi':'📖 Oggi in classe','compiti':'📚 Compiti in arrivo',
+            'ieri':'🗓️ Il giorno prima','legenda':'ℹ️ Legenda','senza-legenda':'Tutto senza legenda','tutto':'Tutto'};
+function anteprima(modo){
+  var b = document.body;
+  b.setAttribute('data-stampa', modo);
+  b.classList.add('anteprima');
+  if(perWhatsApp){
+    document.getElementById('wa-testo').value = testoWhatsApp(modo);
+    b.classList.add('wa-ante');
+    document.getElementById('barra-titolo').textContent = 'Anteprima per WhatsApp: ' + NOMI[modo];
+    document.getElementById('b-vai').textContent = '💬 Manda su WhatsApp';
+  } else {
+    b.classList.add('filtra');
+    document.getElementById('barra-titolo').textContent = 'Anteprima di stampa: ' + NOMI[modo];
+    document.getElementById('b-vai').textContent = '🖨️ Stampa adesso';
+  }
+  window.scrollTo(0, 0);
+}
+function vai(){ if(perWhatsApp){ whatsapp(document.getElementById('wa-testo').value); } else { window.print(); } }
+function chiudi(){
+  var b = document.body;
+  b.classList.remove('anteprima', 'filtra', 'wa-ante');
+  b.setAttribute('data-stampa', 'tutto');
+  window.scrollTo(0, 0);
+}
+document.body.setAttribute('data-stampa','tutto');
+
+/* ---- L'interruttore STAMPA / WHATSAPP: stessi bottoni, due mestieri. ---- */
+var perWhatsApp = false;
+function scegliModo(wa){
+  perWhatsApp = wa;
+  document.body.classList.toggle('wa', wa);
+  document.getElementById('m-stampa').classList.toggle('attivo', !wa);
+  document.getElementById('m-wa').classList.toggle('attivo', wa);
+  document.getElementById('domanda').textContent = wa ? 'Cosa vuoi mandare su WhatsApp?' : 'Cosa vuoi stampare?';
+  document.querySelectorAll('[data-w]').forEach(function(b){ b.textContent = b.getAttribute(wa ? 'data-w' : 'data-s'); });
+}
+function azione(modo){ anteprima(modo); }
+
+/* La pagina diventa testo per WhatsApp: *grassetto*, _corsivo_, un pallino per riga. */
+function inLinea(nodo){
+  var t = '';
+  nodo.childNodes.forEach(function(n){
+    if(n.nodeType === 3){ t += n.textContent; }
+    else if(n.nodeName === 'BR'){ t += '\n'; }
+    else if(n.nodeName === 'STRONG' || n.nodeName === 'B'){ var x = inLinea(n).trim(); t += x ? '*' + x + '*' : ''; }
+    else if(n.nodeName === 'EM' || n.nodeName === 'I'){ var y = inLinea(n).trim(); t += y ? '_' + y + '_' : ''; }
+    else { t += inLinea(n); }
+  });
+  return t.replace(/[ \t]+/g, ' ');
+}
+function blocco(sez){
+  var righe = [];
+  sez.querySelectorAll('h2, h3, p, li').forEach(function(n){
+    if(n.nodeName === 'H2'){ righe.push('', '*' + n.textContent.trim().toUpperCase() + '*'); }
+    else if(n.nodeName === 'H3'){ righe.push('', '*' + n.textContent.trim() + '*'); }
+    else if(n.nodeName === 'LI'){ righe.push('▪️ ' + inLinea(n).trim()); }
+    else { righe.push(inLinea(n).trim()); }
+  });
+  return righe.join('\n');
+}
+function testoWhatsApp(modo){
+  var scelte = {'tutto':['verifiche','oggi','compiti','ieri','orario','legenda'],
+                'senza-legenda':['verifiche','oggi','compiti','ieri','orario']}[modo] || [modo];
+  var parti = ['📚 *' + document.querySelector('h1').textContent.trim() + '*'];
+  var testata = document.querySelector('.sez-testata strong');
+  if(testata){ parti.push('_' + testata.textContent.trim() + '_'); }
+  scelte.forEach(function(k){ var s = document.querySelector('.sez-' + k); if(s){ parti.push(blocco(s)); } });
+  if(scelte.indexOf('compiti') >= 0 && scelte.indexOf('legenda') < 0){
+    parti.push('', '_📌 = scritto in Agenda · 🆕 = dato oggi o il giorno prima · ⚠️ = verifica o interrogazione_');
+  }
+  parti.push('', '_Per i compiti fa sempre fede il diario scritto a mano dall\'alunno._');
+  if(/^https?:/.test(location.protocol)){ parti.push(location.href.split('?')[0]); }
+  return parti.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function avviso(msg){
+  var a = document.getElementById('avviso'); a.textContent = msg; a.style.display = 'block';
+  setTimeout(function(){ a.style.display = 'none'; }, 3500);
+}
+function whatsapp(testo){
+  // Telefono: si apre la condivisione e si sceglie WhatsApp. Computer: si copia, poi si incolla.
+  if(navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+    navigator.share({text: testo}).catch(function(){});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(testo).then(
+      function(){ avviso('✅ Copiato! Ora incollalo nella chat di WhatsApp'); },
+      function(){ window.prompt('Copia questo testo:', testo); });
+  } else { window.prompt('Copia questo testo:', testo); }
+}
+/* Un bottone per una sezione che oggi non c'e' (es. nessuna verifica in arrivo)? Lo nascondiamo.
+   Pagina vecchia, senza sezioni? Restano solo "Stampa tutto" e basta. */
+document.querySelectorAll('.bottoni [data-sez]').forEach(function(b){
+  if(!document.querySelector('.sez-'+b.getAttribute('data-sez'))){b.style.display='none';}
+});
+</script>
 """
 
 
 def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False, diario=None):
-    """La pagina HTML finale: titolo, bottone Stampa, compiti in arrivo, orario della settimana."""
+    """La pagina HTML finale: titolo, bottoni (stampa o WhatsApp, con anteprima), poi le sezioni."""
     titolo_pagina = f"Classe {classe}" if classe else "Compiti e orario"
     return (f"<!doctype html><html lang='it'><head><meta charset='utf-8'>"
             f"<meta name='viewport' content='width=device-width, initial-scale=1'>"
             f"<title>{html.escape(titolo_pagina)}</title><style>{STILE_PAGINA}</style></head><body>"
             f"<h1>{html.escape(titolo_pagina)}</h1>"
-            f"<button class='stampa' onclick='window.print()'>Stampa / salva PDF</button>"
-            + html_pagina_web(classe, orario, giorni, per_giorno, ricostruito, diario) + "</body></html>")
+            + CONTROLLI_PAGINA
+            + html_pagina_web(classe, orario, giorni, per_giorno, ricostruito, diario)
+            + SCRIPT_PAGINA + "</body></html>")
 
 
 # ================================================================ MAIN
