@@ -1,4 +1,8 @@
-# Compiti ClasseViva
+# Spaggiari Boost 🏎️
+
+**Il kit di elaborazione per i compiti del registro elettronico ClasseViva.** Stage 2: anteprima, stampa e WhatsApp.
+
+*Progetto indipendente e gratuito, fatto da un genitore: NON è affiliato, approvato o supportato da Spaggiari né dalla scuola. "Spaggiari" e "ClasseViva" sono marchi dei rispettivi titolari, citati solo per dire con cosa funziona.*
 
 Ore 21:30, cucina, scena nota a tutti:
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-compiti_classeviva.py
+compiti_classeviva.py  ·  SPAGGIARI BOOST 🏎️ (Stage 2)
+
+Il kit di elaborazione per i compiti del registro elettronico ClasseViva.
+Progetto indipendente: NON affiliato, approvato o supportato da Spaggiari ne' dalla scuola.
 
 Scena tipica, ore 21:30.
   "Hai fatto i compiti?"  "Sì."  "Quali?"  "Boh, non c'erano."  "E oggi in classe?"  "Niente."
@@ -1045,7 +1048,7 @@ def pagina_completa(classe, orario, giorni, per_giorno, ricostruito=False, diari
 
 def main():
     # 1. Le opzioni. Senza niente: tutti i compiti in arrivo.
-    ap = argparse.ArgumentParser(description="Compiti e orario da ClasseViva, pronti da leggere e stampare")
+    ap = argparse.ArgumentParser(description="Spaggiari Boost: compiti e diario di classe da ClasseViva, da leggere, stampare o mandare su WhatsApp. Progetto indipendente, non affiliato a Spaggiari.")
     ap.add_argument("--domani", action="store_true", help="solo il prossimo giorno di scuola")
     ap.add_argument("--data", help="un solo giorno, AAAA-MM-GG")
     ap.add_argument("--dal", help="inizio periodo, AAAA-MM-GG")

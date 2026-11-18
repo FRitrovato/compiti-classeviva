@@ -1,4 +1,6 @@
-# Compiti ClasseViva: manuale per Mac
+# Spaggiari Boost: manuale per Mac
+
+*Progetto indipendente e gratuito, fatto da un genitore: NON è affiliato, approvato o supportato da Spaggiari né dalla scuola. "Spaggiari" e "ClasseViva" sono marchi dei rispettivi titolari, citati solo per dire con cosa funziona.*
 
 Questo manuale ti accompagna passo passo. Non serve saper usare il computer più di tanto: basta seguire i passi nell'ordine, senza saltarne nessuno. Se sai mandare un vocale su WhatsApp, ce la fai.
 
